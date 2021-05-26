@@ -1,0 +1,358 @@
+---
+title: "AGU Plots"
+author: "Spencer  Zeigler"
+date: "12/10/2020"
+output:
+  html_document: 
+    df_print: paged
+    css: stylesheet.css
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# load libraries
+
+library(MASS)
+library(latex2exp)
+library(readxl)
+library(ggplot2)
+library(tidyverse)
+library(tidyr)
+library(plotly)
+library(scales)
+library(dplyr)
+library(readr)
+library(plotly)
+library(RColorBrewer)
+library(ggsci)
+library(xlsx)
+
+par(mfrow=c(1, 1)) #how to arrange plots, 1 per row, 1 per column
+
+# global knitting options for automatic saving of all plots as .png and .pdf
+knitr::opts_chunk$set(
+  dev = c("png", "pdf"), fig.keep = "all",
+  dev.args = list(pdf = list(encoding = "WinAnsi", useDingbats = FALSE)),
+  fig.path = file.path("fig_output", paste0(gsub("\\.[Rr]md", "", knitr::current_input()), "_"))
+)
+
+#Theme options
+theme_set(theme_light())
+theme_update(plot.title = element_text(hjust = 0.5)) #adjusts theme so that all titles are centered
+theme_update(plot.subtitle= element_text(hjust = 0.5)) #adjusts subtitle so they are all centered
+options(scipen = 999) #prints numbers instead of scientific notation
+
+#Color Palettes 
+brp.color <- c("lightseagreen", "firebrick3", "darkorchid3", "#E69F00", "lightseagreen", "firebrick3", "#56B4E9", "#009E73", "#0072B2", "#CC79A7", "#000000")
+bry.color <-c("#2C8C99", "#e5b400","#f44609","#EF476F","#faa612","#550527", "#688d27","#a10702", "#87B38D","#2C666E", "#4D8B31")
+accent.color <- c("#D95F02","cornflowerblue", "darkolivegreen", "darkorchid3")
+set2.color <- c("#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F", "#E5C494", "#B3B3B3")
+set1.color <- c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33", "#A65628", "#F781BF")
+paired.color <- c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00")
+
+brewer.pal(n = 8, name = "Paired") #Pulls a palette from Rcolorbrewer and prints the hex codes 
+
+#To use ggsci https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html
+mypal = pal_npg("palette type", alpha = 0.7)(9)
+scale_color_palname()
+scale_fill_palname()
+```
+
+#Ft- Common Grains A + B- POSTER PLOT
+```{r}
+df.endmember.only <- df7 %>%
+  filter(!size.name == "Large & Common") %>%
+  filter(!size.name == "Small & Common") %>%
+  filter(!size.name == "Typical & Common") 
+
+df.endmember.only.ab <- filter(df.endmember.only, !gc == "C")
+df.endmember.only.c <- filter(df.endmember.only, gc == "C")
+
+df7.rm.ab <- df7.rm %>% 
+  filter(!gc == "C")
+df7.rm.c <- df7.rm %>%
+  filter(gc == "C")
+
+ftp9 <- ggplot() + 
+  #xlim(.25, .9) + ylim(.25, .9) +
+  geom_abline(slope=1, intercept = 0, color="black") + 
+  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
+  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
+  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
+  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
+  labs(title = "Manual 2D vs. Nano-CT 3D Ft with Correction Line", subtitle="WLS Regression on Common Grains", x= "2D Ft", y= "3D Ft") + 
+  scale_color_manual(values= mypal, 
+                   name= "Legend",
+                labels= c("A Grains", "B Grains")) +
+  geom_point(df7.rm.ab, mapping=aes(x = s.ft, y = db.ft, color=gc,), size = 2) +
+  geom_point(df.endmember.only.ab, mapping=aes(x=s.ft, y=db.ft), color= "grey", size=2, alpha=.7) +
+  geom_smooth(mapping=aes(s.ft, db.ft), data= df7.rm.ab, method="lm", se=FALSE, color="grey20", size=1.5) 
+
+plot(ftp9)
+
+#y=-.03152 + 1.02205x
+
+mypal = pal_npg("nrc", alpha = 1)(9)
+print(mypal)
+
+```
+
+#Ft- Common Grains C- POSTER PLOT
+```{r}
+ftp10 <- ggplot() + 
+  xlim(.25, .9) + ylim(.25, .9) +
+  geom_abline(slope=1, intercept = 0, color="black", size=1) + 
+  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
+  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
+  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
+  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
+  labs(title = "Manual 2D vs. Nano-CT 3D Ft with Correction Line", subtitle="WLS Regression on Common Grains", x= "2D Ft", y= "3D Ft") + 
+ scale_color_manual(values="#42B540FF", 
+                    name= "Legend",
+                    labels= c("C Grains")) +
+  geom_point(df7.rm.c, mapping=aes(x = s.ft, y = db.ft, color=gc,), size = 2) +
+  geom_point(df.endmember.only.c, mapping=aes(x=s.ft, y=db.ft), color= "grey", size=2, alpha=.7) +
+  geom_smooth(mapping=aes(s.ft, db.ft), data= df7.rm.c, method="lm", se=FALSE, color="darkorchid4", size=1.5) 
+
+plot(ftp10)
+
+#y=-.03152 + 1.02205x
+
+```
+
+
+#Volume- Common Grains A + B- POSTER PLOT
+```{r}
+df.endmember.only <- df7 %>%
+  filter(!size.name == "Large & Common") %>%
+  filter(!size.name == "Small & Common") %>%
+  filter(!size.name == "Typical & Common") 
+
+df.endmember.only.ab <- filter(df.endmember.only, !gc == "C")
+df.endmember.only.c <- filter(df.endmember.only, gc == "C")
+
+df7.rm.ab <- df7.rm %>% 
+  filter(!gc == "C")
+df7.rm.c <- df7.rm %>%
+  filter(gc == "C")
+
+vp9 <- ggplot() + 
+  #xlim(0,750000) + ylim(0,750000) +
+  geom_abline(slope=1, intercept = 0) + 
+  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
+  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
+  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
+  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
+  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
+  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
+  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
+  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
+  labs(title = "Manual 2D vs. Nano-CT 3D Volume with Correction Line (unzoomed)", subtitle="WLS Regression on Common Grains", x= "2D Volume (µm)", y= "3D Volume (µm)") + 
+  scale_color_manual(values=mypal, 
+                    name= "Legend",
+                    labels= c("A Grains", "B Grains")) +
+                  
+  geom_point(df7.rm.ab, mapping=aes(x = s.v, y = db.v, color=gc), size = 2) +
+  geom_point(df.endmember.only.ab, mapping=aes(x=s.v, y=db.v), color= "grey", size=2, alpha=.7) +
+  geom_smooth(mapping=aes(s.v, db.v), data= df7.rm.ab, method="lm", se=FALSE, color="grey20", size=1.5) 
+
+plot(vp9)
+
+
+mypall = pal_nejm("default", alpha = 1)(8)
+print(mypall)
+
+#y=-.03152 + 1.02205x
+```
+
+#Volume- Common Grains C- POSTER PLOT
+```{r}
+vp10 <- ggplot() + 
+  xlim(0,750000) + ylim(0,750000) +
+  geom_abline(slope=1, intercept = 0) + 
+  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
+  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
+  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
+  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
+  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
+  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
+  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
+  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
+  labs(title = "Manual 2D vs. Nano-CT 3D Volume with Correction Line (zoomed)", subtitle="WLS Regression on Common Grains", x= "2D Volume (µm)", y= "3D Volume (µm)") + 
+ scale_color_manual(values="#42B540FF", 
+                     name= "Legend",
+                    labels= c("C Grains")) +
+  geom_point(df7.rm.c, mapping=aes(x = s.v, y = db.v, color=gc,), size = 2) +
+  geom_point(df.endmember.only.c, mapping=aes(x=s.v, y=db.v), color= "grey", size=2, alpha=.7) +
+  geom_smooth(mapping=aes(s.v, db.v), data= df7.rm.c, method="lm", se=FALSE, color="darkorchid4", size=1.5) 
+
+plot(vp10)
+
+#y=-.03152 + 1.02205x
+```
+
+#Error Bars- Ft
+```{r}
+quad.df.ft <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Linear Reg Results.xlsx", sheet= "ft.reg.master")
+quad.df.ft <- quad.df.ft[c(53:65),]
+
+quad.df.ft <- quad.df.ft %>%
+  select(gem, method.grains, slope, sigma.slope, intercept, sigma.intercept, gem.cat) 
+quad.df.ft <- quad.df.ft[order(quad.df.ft$gem),]
+
+
+quad.df.ft$gem <- factor(quad.df.ft$gem, levels = c("A1", "A2", "A3", "A", "B1", "B2", "B3", "B", "AB", "C1", "C2", "C3", "C"))
+quad.df.ft <- quad.df.ft %>%
+  filter(method.grains == "common.only.lm") %>%
+  filter(gem.cat == "C")
+  #filter(!method.grains == "common.large.rlm") %>%
+  #filter(!method.grains == "common.only.rlm") %>%
+  #filter(!method.grains == "common.only.lm") %>%
+  #filter(!method.grains == "none.removed") 
+quad.df.ft$intercept <- as.numeric(as.character(quad.df.ft$intercept))
+
+pal <- c("grey20", "darkorchid4")
+#####################################################################
+
+#Ft error bars, Slope
+ggplot(quad.df.ft, aes(x=gem, y=slope, color=gem.cat)) + 
+  scale_color_manual(values=pal, 
+                     name= "Legend",
+                     labels= c("A & B Grains", "C Grains")) +
+geom_pointrange(aes(ymin=slope-sigma.slope, ymax=slope+sigma.slope)) +
+  labs(title= "1σ Error Bars on Ft Correction Lines for Each GEM", x="GEM", y="Slope")
+
+#Ft error bars, intercept
+ggplot(quad.df.ft, aes(x=gem, y=intercept, color= gem.cat)) + 
+  scale_color_manual(values=pal) +
+geom_pointrange(aes(ymin=intercept-sigma.intercept, ymax=intercept+sigma.intercept)) +
+  labs(title= "1σ Error Bars on Ft Correction Line Intercepts for Each GEM", subtitle="Calculated with a WLS Linear Regression, Colored by Dataset regressed", x="GEM", y="Intercept")
+
+```
+
+#Error Bars- Volume
+```{r}
+quad.df.v <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Linear Reg Results.xlsx", sheet= "vol.reg.master")
+quad.df.v <- quad.df.v[c(27:117),]
+
+quad.df.v <- quad.df.v %>%
+  select(gem, method.grains, slope, sigma.slope, intercept, sigma.intercept, gem.cat) 
+quad.df.v <- quad.df.v[order(quad.df.v$gem),]
+
+quad.df.v$gem <- factor(quad.df.v$gem, levels = c("A1", "A2", "A3", "A", "B1", "B2", "B3", "B", "AB", "C1", "C2", "C3", "C"))
+quad.df.v <- quad.df.v %>%
+ # filter(!method.grains == "common.small.rlm") %>%
+  #filter(!method.grains == "common.large.rlm") %>%
+  #filter(!method.grains == "common.only.rlm") %>%
+  filter(method.grains == "common.only.lm") %>%
+  filter(gem.cat == "C")
+  #filter(!method.grains == "none.removed") 
+
+#####################################################################
+
+#Volume error bars, Slope
+ggplot(quad.df.v, mapping=aes(x=gem, y=slope, color= gem.cat)) + 
+  scale_color_manual(values=pal, 
+                     name="Legend", 
+                     labels= c("A & B grains", "C Grains")) +
+geom_pointrange(aes(ymin=slope-sigma.slope, ymax=slope+sigma.slope)) +
+  labs(title= "1σ Error Bars on Volume Correction Lines for Each GEM", x="GEM", y="Slope")
+
+#Volume error bars, Intercept
+ggplot(quad.df.v, aes(x=gem, y=intercept, color= gem.cat)) + 
+  scale_color_manual(values=pal, 
+                     name="Legend", 
+                     labels= c("A & B grains", "C Grains")) +
+geom_pointrange(aes(ymin=intercept-sigma.intercept, ymax=intercept+sigma.intercept)) +
+  labs(title= "1σ Error Bars on Volume Correction Line Intercepts for Each GEM", subtitle="Calculated with a WLS Linear Regression, Colored by Dataset Regressed", x="GEM", y="Intercept")
+```
+
+
+#Plot Analyzed vs. Observed Line Graph
+```{r}
+number.apatite <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 1 (Size Analysis)/Analyzed vs Observed Binned Apatite Data_rmf_v2_jrm_final.xlsx", sheet = "R")
+as_tibble(number.apatite)
+number.apatite$Bin <- factor(number.apatite$Bin, levels = c("40-50", "51-60", "61-70", "71-80", "81-90", "91-100", "101-110", "111-120", "121-130", "131-140", "141-150", "151-160", "161-170"))
+df7$size.name <- factor(df7$size.name, levels=c("Small & Never", "Small & Rarely","Average", "Large & Common", "Large & Rarely"))
+cbpalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+
+ggplot() +
+  geom_line(number.apatite, mapping = aes(x=Bin, y=Analyzed, group=1)) + 
+  geom_point(number.apatite, mapping= aes(x= Bin, y=Analyzed), color= "black") +
+  geom_line(number.apatite, mapping = aes(x=Bin, y= Selected, group=1, color= size.name)) +
+  geom_point(number.apatite, mapping= aes(x= Bin, y=Selected, color= size.name)) +
+  scale_color_manual(values= c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"), 
+                    name= "Size Categories",
+                    labels= c("Small & Never","Small & Rarely","Average", "Large & Common", "Large & Rarely")) +
+  labs(title= "Number of Grains Selected for Nano-CT Analysis as a \n Representative Sample of 1100 Apatite Grains Run in the TraIL", x= "Size Bin (µm)", y= "Number of Grains") + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.99, hjust=1))
+
+```
+
+
+```{r}
+df.v.resid.p <- df7 %>%
+  mutate(s.v.resid = resid(lm(db.v ~ s.v))) %>%
+  mutate(s.v.resid.norm = s.v.resid/db.v) %>%
+  mutate(s.v.resid.norm.percent = s.v.resid.norm *100) %>%
+  mutate(s.v.resid.norm.abs = abs(s.v.resid.norm))
+
+df.ft.resid.p <- df7 %>%
+  mutate(s.ft.resid = resid(lm(db.ft ~ s.ft))) %>%
+  mutate(s.ft.resid.norm = s.ft.resid/db.ft) %>%
+  mutate(s.ft.resid.norm.percent = s.ft.resid.norm*100) %>%
+  mutate(s.ft.resid.norm.abs = abs(s.ft.resid.norm))
+
+df.ft.resid.p$size.name <- factor(df.ft.resid.p$size.name, levels=c("Small & Rare","Small & Common","Typical & Common", "Large & Common", "Large & Rare"))
+df.v.resid.p$size.name <- factor(df.v.resid.p$size.name, levels=c("Small & Rare","Small & Common","Typical & Common", "Large & Common", "Large & Rare"))
+```
+
+
+#Normalized residual Ft vs. 2D Ft With linear regression
+```{r}
+ftresp1 <- ggplot(df.ft.resid.p, mapping=aes(x=s.ft, y=s.ft.resid.norm.abs, color= size.name)) + 
+  labs(title= "2D Ft vs. Normalized Residual Values Calculated \nfrom WLS Linear Regression", x="2D Ft", y="Normalized Residual Values") +
+  geom_point(size=2) +
+  geom_abline(slope=0, intercept=0) +
+  scale_color_manual(values=mypal,
+                     name= "Legend", 
+                     labels= c("Small & Rare", "Small & Common", "Typical & Common", "Large & Common", "Large & Rare")) 
+plot(ftresp1)
+
+print(mypal)
+mypal <- c("#E64B35FF", "#4DBBD5FF", "#3C5488FF", "#F39B7FFF","#00A087FF", "#8491B4FF", "#91D1C2FF", "#DC0000FF","#7E6148FF")
+```
+
+#Normalized residual Volume vs. 2D Volume with linear regression
+```{r}
+vresp1 <- ggplot(df.v.resid.p, mapping=aes(x=s.v, y=s.v.resid.norm.abs, color=size.name), size=3) + 
+  xlim(0,1000000) +
+  labs(title= "Manual 2D Volume vs. Normalized Residual Values Calculated \nfrom WLS Linear Regression", x= "2D Volume", y="Normalized Residual Values") +
+   scale_color_manual(values=mypal,
+                     name= "Legend", 
+                     labels= c("Small & Rare", "Small & Common", "Typical & Common", "Large & Common", "Large & Rare")) +
+    geom_point() +
+  geom_abline(slope=0, intercept=0) 
+plot(vresp1)
+```
+
+```{r}
+
+```
+
+
