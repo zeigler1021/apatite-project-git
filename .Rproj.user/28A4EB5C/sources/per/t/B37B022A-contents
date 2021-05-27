@@ -1,0 +1,31 @@
+---
+title: "R Tips and Tricks"
+output: html_notebook
+---
+### Keyboard Shortcuts 
+
+[R Studio Keyboard Shortcuts](https://support.rstudio.com/hc/en-us/articles/200711853-Keyboard-Shortcuts)
+
+* Add a new code chunk with *Cmd+Option+I* 
+* Insert pipe with *Cmd+Shift+M*
+* Comment/uncomment current line *Cmd+Shift+C* 
+* Rename Symbol in Scope *Cmd+Option+Shift+M*
+* Preview html in R notebook without knitting *Cmd+Shift+K*
+
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+
+
+```{r}
+
+```
+
