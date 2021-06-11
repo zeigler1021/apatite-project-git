@@ -39,7 +39,6 @@ library(viridis)
 library(scales)
 library(performance)
 library(glue)
-install.packages("tinytex")
 library(tinytex)
 par(mfrow=c(1, 1)) #how to arrange plots, 1 per row, 1 per column
 
@@ -104,11 +103,6 @@ c3 <- common_apatite %>% filter(s.gem == "C3")
 term0 <- common_apatite %>% filter(np == "0")
 term1 <- common_apatite %>% filter(np == "1")
 term2 <- common_apatite %>% filter(np =="2")
-
-#Create Dataframe organized by GEM and A&B 
-df.ab <- rbind(df.gca, df.gcb)
-df.ab <- df.ab %>%
-  mutate(s.gem = "AB")
 ```
 
 ```{r}
@@ -287,6 +281,7 @@ ggplot() +
 
 ```
 
+
 Common Grains Only plotted by Geometry and colored by roughness. Regression line based on geometry plotted in red. 
 ```{r}
 pa <- ggplot() + 
@@ -339,68 +334,6 @@ p3 <- ggplot() +
 p1 / p2 / p3
 ```
 
-```{r}
-plot.gem <- function(df, gem, vol = FALSE) {
-  
-  theme_update(plot.title = element_text(hjust = 0)) #adjusts theme so that all titles are centered
-  theme_update(plot.subtitle= element_text(hjust = 0))
-  
-  if (vol == FALSE) {
-  x <- as.numeric(unlist(df %>% select(s.ft)))
-  y <- as.numeric(unlist(df %>% select(db.ft)))
-  
-  slope <- lm(y ~ 0 + x, data= df)$coefficient[1]
-  error <- summary(lm(y ~ 0 + x, data=df))$sigma
-  
-  slope.r <- round(slope, 3)
-  error.r <- round(error, 3)
-   
-  print(ggplot() + 
-  xlim(.47, .8) + ylim(.47, .8) +
-  geom_abline(slope = 1, intercept = 0, linetype = 2) + 
-  geom_abline(slope= slope, intercept= 0, color = "purple") +
-  geom_point(df, mapping=aes(x,y), size =2) + 
-  labs(title = glue("{gem}"),
-    subtitle = glue("slope = {slope.r}\nstd error = {error.r}"),
-      x= "2D Ft", y= "3D Ft"))
-  } 
-  if (vol == TRUE) {
-  x <- as.numeric(unlist(df %>% select(s.v)))/10^5
-  y <- as.numeric(unlist(df %>% select(db.v)))/10^5
-  
-  slope <- lm(y ~ 0 + x, data= df)$coefficient[1]
-  error <- summary(lm(y ~ 0 + x, data=df))$sigma
-  
-  slope.r <- round(slope, 3)
-  error.r <- round(error, 3) 
-  
-  print(ggplot() + 
-  #xlim(.47, .8) + ylim(.47, .8) +
-  geom_abline(slope = 1, intercept = 0, linetype = 2) + 
-  geom_abline(slope= slope, intercept= 0, color = "blue") +
-  geom_point(df, mapping=aes(x,y), size =2) + 
-  labs(title = glue("{gem}"),
-      subtitle = glue("slope = {slope.r}\nstd error = {error.r}"),
-      x= "2D Vol. (10^5)", y= "3D Vol. (10^5)"))
-  }
-}
-```
-
-GEM plots of common grains only with regression slope plotted! 
-```{r}
-pa1 <- plot.gem(a1, "A1", vol = FALSE)
-pb1 <- plot.gem(b1, "B1")
-pc1 <- plot.gem(c1, "C1")
-pa2 <- plot.gem(a2, a2$s.ft, a2$db.ft, "A2")
-pb2 <- plot.gem(b2, b2$s.ft, b2$db.ft, "B2")
-pc2 <- plot.gem(c2, c2$s.ft, c2$db.ft, "C2")
-pa3 <- plot.gem(a3, a3$s.ft, a3$db.ft, "A3")
-pb3 <- plot.gem(b3, b3$s.ft, b3$db.ft, "B3")
-pc3 <- plot.gem(c3, c3$s.ft, c3$db.ft, "C3")
-
-ft.gem <- (pa1 + pb1 + pc1) / (pa2 + pb2 + pc2) / (pa3 + pb3 + pc3)
-ft.gem
-```
 
 
 ########## Volume Plots
@@ -618,302 +551,117 @@ geom_pointrange(aes(ymin=intercept-sigma.intercept, ymax=intercept+sigma.interce
   labs(title= "1σ Error Bars on Volume Correction Line Intercepts for Each GEM", subtitle="Calculated with a WLS Linear Regression, Colored by Dataset Regressed", x="GEM", y="Intercept")
 ```
 
+#Read in number_apatite data for plotting and set columns as factor
+```{r}
+number_apatite <- read_excel("./Analyzed vs Observed Binned Apatite Data_rmf_v2_jrm_final.xlsx", sheet = "R Cont")
+number_apatite <- number_apatite[order(number_apatite$analyzed_width),]
+number_apatite<- number_apatite[-c(1063:1102),] #only include grains <160
+as_tibble(number_apatite)
+
+number_apatite$Bin <- factor(number_apatite$Bin, levels = c("40-50", "51-60", "61-70", "71-80", "81-90", "91-100", "101-110", "111-120", "121-130", "131-140", "141-150", "151-160", "161-170"))
+
+number_apatite$size.name <- factor(number_apatite$size.name, levels=c("Small & Rare", "Small & Common","Typical & Common", "Large & Common", "Large & Rare"))
+```
+
 
 #Plot Analyzed vs. Observed Line Graph
 ```{r}
-number.apatite <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 1 (Size Analysis)/Analyzed vs Observed Binned Apatite Data_rmf_v2_jrm_final.xlsx", sheet = "R")
-as_tibble(number.apatite)
-number.apatite$Bin <- factor(number.apatite$Bin, levels = c("40-50", "51-60", "61-70", "71-80", "81-90", "91-100", "101-110", "111-120", "121-130", "131-140", "141-150", "151-160", "161-170"))
-df7$size.name <- factor(df7$size.name, levels=c("Small & Never", "Small & Rarely","Average", "Large & Common", "Large & Rarely"))
-cbpalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-
+theme_set(theme_classic())
 
 ggplot() +
-  geom_line(number.apatite, mapping = aes(x=Bin, y=Analyzed, group=1)) + 
-  geom_point(number.apatite, mapping= aes(x= Bin, y=Analyzed), color= "black") +
-  geom_line(number.apatite, mapping = aes(x=Bin, y= Selected, group=1, color= size.name)) +
-  geom_point(number.apatite, mapping= aes(x= Bin, y=Selected, color= size.name)) +
-  scale_color_manual(values= c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"), 
-                    name= "Size Categories",
-                    labels= c("Small & Never","Small & Rarely","Average", "Large & Common", "Large & Rarely")) +
-  labs(title= "Number of Grains Selected for Nano-CT Analysis as a \n Representative Sample of 1100 Apatite Grains Run in the TraIL", x= "Size Bin (µm)", y= "Number of Grains") + 
-  theme(axis.text.x = element_text(angle = 60, vjust = 0.99, hjust=1))
-
+  geom_area(number_apatite, stat="bin", fill="grey90", binwidth=5, mapping= aes(x= analyzed_width)) +
+  geom_area(apatite, stat="bin", fill="black", binwidth=5, mapping=aes(x=j.w1)) +
+  labs(title= "Number of Grains Selected for Nano-CT Analysis as a\nRepresentative Sample of 1100 Apatite Grains Run in the TraIL", x= "Width (µm)", y= "Number of Grains") 
+  #theme(axis.text.x = element_text(angle = 60, vjust = 0.99, hjust=1))
 ```
 
 
 ############################################################################
 Manuscript Draft Figures
 
+1. Plot Results_Figure
 ```{r}
-plot.results <- function(df, x, y, gem=c("geo", "rough"), param= c("ft", "esr")) { #c("ft", "esr", NULL)
-  
-  greens <- c("#C777D6", "#41b6c4", "#004529")
-  pinks <- c("#fe9929", "#dd3497", "#49126a")
+pvg <- plot.results(apatite, "s.v", "db.v", "geo", "volume") 
+pvr <- plot.results(apatite, "s.v", "db.v", "rough", "volume")
 
-  x.var <- enquo(x)
-  y.var <- enquo(y)
-  
-  if (gem == "geo") {
-       
-  p <- ggplot() + 
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
-  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
-  labs(x = "2D", y= "3D") + 
-  theme(legend.position = c(.89, .15)) +
-  scale_color_manual(values = pinks,
-                      name= "Geometric Index",
-                      labels= c("A", "B", "C")) +
-  geom_point(df, mapping=aes(x = !!x.var, y = !!y.var, color = gc), size = 2)
-}
-  
-  if (gem == "rough") {
-  p <- ggplot() + 
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
-  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
-  labs(x = "2D", y= "3D") + 
-  theme(legend.position = c(.89, .15)) +
-  scale_color_manual(values = greens, 
-                      name = "Roughness Index",
-                      labels = c("1", "2", "3")) +
-  geom_point(df, mapping=aes(x = !!x.var, y = !!y.var, color = as.factor(ri)), size = 2)
-  }
-  
-  if(param == "ft") {
-    p + xlim(.25, .9) + ylim(.25, .9) 
-   } 
-  if(param == "esr") {
-      p
-     } else {
-        p + xlim(0,750000) + ylim(0, 750000)
-     }
-}
-```
+psg <- plot.results(apatite, "s.sa", "db.sa", "geo", "surface")
+psr <- plot.results(apatite, "s.sa", "db.sa", "rough", "surface")
 
-Volume- all grains- colored by geometry
-```{r}
-plot.results(apatite, s.v, db.v, "geo")
-plot.results(apatite, s.v, db.v, "rough")
+pftg <- plot.results(apatite, "s.ft", "db.ft", "geo", "ft") 
+pftr <- plot.results(apatite, "s.ft", "db.ft", "rough", "ft") 
 
-plot.results(apatite, s.sa, db.sa, "geo")
-plot.results(apatite, s.sa, db.sa, "rough")
+peg <- plot.results(apatite, "s.esr.ft", "db.esr.ft", "geo", "esr")
+per <- plot.results(apatite, "s.esr.ft", "db.esr.ft", "rough", "esr")
 
-plot.results(apatite, s.ft, db.ft, "geo") 
-plot.results(apatite, s.ft, db.ft, "rough") 
-
-
-plot.results(apatite, s.esr.ft, db.esr.ft, "geo", "esr")
-plot.results(apatite, s.esr.ft, db.esr.ft, "rough", "esr")
-
-pvg <- ggplot() + 
-  #xlim(0,750000) + ylim(0, 750000) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
-  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
-  labs(x = "2D Volume (µm3)", y= "3D Volume (µm3)") + 
-  theme(legend.position = c(.89, .15)) +
-  scale_color_manual(values = pinks,
-                      name= "Geometric Index",
-                      labels= c("A", "B", "C")) +
-  geom_point(df7, mapping=aes(x = s.v, y = db.v, color = gc), size = 2)
-pvg
-```
-
-Volume- all grains- colored by roughness
-```{r}
-pvr <- ggplot() + 
-  #xlim(0,750000) + ylim(0, 750000) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
-  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
-  labs(x = "2D Volume (µm3)", y= "3D Volume (µm3)") + 
-  theme(legend.position = c(.89, .15)) +
-  scale_color_manual(values = greens, 
-                      name = "Roughness Index",
-                      labels = c("1", "2", "3")) +
-  geom_point(df7, mapping=aes(x = s.v, y = db.v, color = as.factor(ri)), size = 2)
-pvr
-```
-
-Surface Area- all grains- colored by geometry
-```{r}
-psg <- ggplot() + 
-  #xlim(0,75000) + ylim(0, 75000) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
-  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
-  labs(x = "2D Surface Area (µm2)", y= "3D Surface Area (µm2)") + 
-  theme(legend.position = c(.89, .15)) +
-  scale_color_manual(values = pinks,
-                     name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-  geom_point(df7, mapping=aes(x = s.sa, y = db.sa, color = gc), size = 2)
-psg
-```
-
-Surface Area- all grains- colored by roughness
-```{r}
-psr <- ggplot() + 
-  #xlim(0,75000) + ylim(0, 75000) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
-  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
-  labs(x = "2D Surface Area (µm2)", y= "3D Surface Area (µm2)") + 
-  theme(legend.position = c(.89, .15)) +
-  scale_color_manual(values = greens, 
-                     name= "Roughness Index",
-                    labels= c("1", "2", "3")) +
-  geom_point(df7, mapping=aes(x = s.sa, y = db.sa, color = as.factor(ri)), size = 2)
-psr
-```
-
-Ft- all grains- colored by geometry
-```{r}
-pftg <- ggplot() + 
-  xlim(.25, .9) + ylim(.25, .9) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  labs(x= "2D Ft", y= "3D Ft") + 
-  theme(legend.position = c(.89, .15)) +
-  scale_color_manual(values = pinks,
-                     name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-  geom_point(df7, mapping=aes(x = s.ft, y = db.ft, color = gc, key= sample), size = 2)
-
-pftg
-#ggplotly(pftg, tooltip="key")
-```
-
-Ft- all grains- colored by roughness
-```{r}
-pftr <- ggplot() + 
-  xlim(.25, .9) + ylim(.25, .9) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  labs(x= "2D Ft", y= "3D Ft") +
-  theme(legend.position = c(.89, .15)) +
-  scale_color_manual(values = greens,  
-                     name= "Roughness Index",
-                    labels= c("1", "2", "3")) +
-  geom_point(df7, mapping=aes(x = s.ft, y = db.ft, color = as.factor(ri)), size = 2)
-
-pftr
-```
-
-ESR-Ft- all grains- colored by geometry
-```{r}
-peg <- ggplot() + 
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  #geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
- #geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
-  labs(x= "2D ESR-Ft", y= "3D ESR-Ft") +
-  theme(legend.position = c(.89, .15)) +
-  scale_color_manual(values = pinks,  
-                     name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-  geom_point(df7, mapping=aes(x = s.esr.ft, y = db.esr.ft, color = gc), size = 2)
-peg
-```
-
-ESR-Ft- all grains- colored by roughness
-```{r}
-per <- ggplot() + 
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  labs(x= "2D ESR-Ft", y= "3D ESR-Ft") +
-  theme(legend.position = c(.89, .15)) +
-  scale_color_manual(values = greens,  
-                     name= "Roughness Index",
-                    labels= c("1", "2", "3")) +
-  geom_point(df7, mapping=aes(x = s.esr.ft, y = db.esr.ft, color = as.factor(ri)), size = 2)
-per
-```
-
-Combine all results: 
-```{r}
-cowplot::plot_grid(pvg, pvr, psg, psr, pftg, pftr, peg, per, nrow =4, ncol = 2, labels = NULL)
+(pvg | pvr) / (psg | psr) / (pftg + pftr) / (peg + per) 
 #save 1100 x 1300
 
-
-boxplot(df.gca$db.ft, df.gca$s.ft)
 ```
 
-ESR
+2. GEM plot of common grains only with regression slope plotted! 
+```{r}
+pa1 <- plot.gem(a1, "A1")
+pb1 <- plot.gem(b1, "B1")
+pc1 <- plot.gem(c1, "C1")
+pa2 <- plot.gem(a2, "A2")
+pb2 <- plot.gem(b2, "B2")
+pc2 <- plot.gem(c2, "C2")
+pa3 <- plot.gem(a3, "A3")
+pb3 <- plot.gem(b3, "B3")
+pc3 <- plot.gem(c3, "C3")
+
+ft.gem <- (pa1 + pb1 + pc1) / (pa2 + pb2 + pc2) / (pa3 + pb3 + pc3)
+ft.gem
+```
+
+####################################################################################
+Other/Unknown
+
+Examining trends in QQ plots for my data
+```{r}
+par(mfrow=c(2,2))
+
+mod<- lm(db.ft ~ s.ft, data=df7)
+plot(mod)
+
+mod1 <- lm(db.ft ~ s.ft, data= df7.rm)
+plot(mod1)
+
+#https://www.ucd.ie/ecomodel/Resources/QQplots_WebVersion.html
+```
+
+Notes and old color pals
+```{r}
+#brp.color <- c("lightseagreen", "firebrick3", "darkorchid3", "#E69F00", "lightseagreen", "firebrick3", "#56B4E9", "#009E73", "#0072B2", "#CC79A7", "#000000")
+#bry.color <-c("#2C8C99", "#e5b400","#f44609","#EF476F","#faa612","#550527", "#688d27","#a10702", "#87B38D","#2C666E", "#4D8B31")
+#accent.color <- c("#D95F02","cornflowerblue", "darkolivegreen", "darkorchid3")
+#brewer.pal(n = 8, name = "Paired") #Pulls a palette from Rcolorbrewer and prints the hex codes
+
+#To use ggsci https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html
+#scales::viridis_pal()(n=20)
+```
+
+Testing how to keep colors the same across plots for samples for morgan
+```{r}
+#Splits sample col by comma
+#df7.sep <- separate(df7, sample, c("samplename", "round", "grain"))
+#df7.sep$samplename <- factor(df7.sep$samplename, levels = c("MM", "DCA", "BF16", "16MFS05", "15MFS07", "Bail", "C50", "FCT"))
+##Setting my color pallete. The order the colors are in matches the the samples. (ie. MM will be red; DCA will be blue; etc.)
+#col.sample <- c("red", "blue", "yellow", "purple", "pink", "green", "orange", "black")
+
+##Plotting my entire dataset
+#ggplot(df7.sep, mapping = aes(s.ft, db.ft, color = samplename)) + 
+  #scale_color_brewer(palette = "Set1", drop = TRUE,limits = levels(df7.sep$samplename)) +geom_point()
+
+##Creating a new dataset by filtering. New dataset only contains mount 2. 
+#df7.sep.mount2 <- df7.sep %>% filter(mount == 2) 
+
+##Plotting mount 2
+#p2 <- ggplot(df7.sep.mount2, mapping= aes(s.ft, db.ft, color=samplename)) + 
+  #scale_color_brewer(palette = "Set1", drop=TRUE, limits = levels(df7.sep$samplename)) +geom_point()
+```
+
+Examining unsurprising trends in ESR I think
 ```{r}
 ggplot() + 
   geom_point(df7, mapping=aes(s.esr.ft, db.esr.ft)) +
@@ -1039,8 +787,6 @@ if (abs(diff) < abs(uncert)) {
 }
 ```
 
-
-
 SA:V Ratios 
 ```{r}
 df7 <- df7 %>%
@@ -1053,119 +799,9 @@ ggplot() +
   geom_abline(slope=1, intercept=0) +
   #labs(title= "SAV.Ratio = SA/V", subtitle= "2D Overestimates SA and V, but 2D Underestimates SAV.Ratio") +
   scale_color_brewer(palette = "Dark2")
-```
 
+#cbpalette <- c("#88e99a", "#2d595a", "#41bbc5", "#5b588f", "#cddb9b")
 
-
-
-
-
-######################################################################################################
-Other/Unknown
-
-```{r}
-plot(x=j.w2, y=j.w1, data=df7)
-
-ggplot(data=df7, mapping=aes(x=j.w2, y=j.w1)) + geom_point() + geom_abline(slope=1, intercept=0)
-```
-
-
-```{r}
-width_data <- df7 %>%
-  select(sample, j.w1, j.w2)
-
-write_excel_csv(width_data, "/Users/spencerzeigler/Desktop/widthdata.csv")
-```
-
-```{r}
-plot(db.boxa ~ j.l1, data= df7.rm)
-
-ggplot() + 
-  geom_point(df7, mapping=aes(j.l1, db.boxa))
-
-ggplot() + 
-  geom_point(df7, mapping=aes(j.w2, db.boxc)) +
-  geom_abline(mapping=aes(slope=1,  intercept=0))
-```
-
-```{r}
-par(mfrow=c(2,2))
-
-mod<- lm(db.ft ~ s.ft, data=df7)
-plot(mod)
-
-mod1 <- lm(db.ft ~ s.ft, data= df7.rm)
-plot(mod1)
-
-https://www.ucd.ie/ecomodel/Resources/QQplots_WebVersion.html
-```
-
-
-#Base R version of GEM plot
-```{r}
-par(mfrow=c(3,3))
-
-plot(df.a1$s.ft, df.a1$db.ft, xlim=c(.4, .8), ylim=c(.4, .8), xlab = "2D Ft", ylab = "3D Ft", main = 
-       "A1")
-abline(0,1)
-
-plot(df.b1$s.ft, df.b1$db.ft, xlim=c(.4, .8), ylim=c(.4, .8), xlab = "2D Ft", ylab = "3D Ft", main = 
-       "B1")
-abline(0,1)
-plot(df.c1$s.ft, df.c1$db.ft, xlim=c(.4, .8), ylim=c(.4, .8), xlab = "2D Ft", ylab = "3D Ft", main = 
-       "C1")
-abline(0,1)
-
-plot(df.a2$s.ft, df.a2$db.ft, xlim=c(.4, .8), ylim=c(.4, .8), xlab = "2D Ft", ylab = "3D Ft", main = 
-       "A2")
-abline(0,1)
-plot(df.b2$s.ft, df.b2$db.ft, xlim=c(.4, .8), ylim=c(.4, .8), xlab = "2D Ft", ylab = "3D Ft", main = 
-       "B2")
-abline(0,1)
-plot(df.c2$s.ft, df.c2$db.ft, xlim=c(.4, .8), ylim=c(.4, .8), xlab = "2D Ft", ylab = "3D Ft", main = 
-       "C2")
-abline(0,1)
-
-plot(df.a3$s.ft, df.a3$db.ft, xlim=c(.4, .8), ylim=c(.4, .8), xlab = "2D Ft", ylab = "3D Ft", main = 
-       "A3")
-abline(0,1)
-plot(df.b3$s.ft, df.b3$db.ft, xlim=c(.4, .8), ylim=c(.4, .8), xlab = "2D Ft", ylab = "3D Ft", main = 
-       "B3")
-abline(0,1)
-plot(df.c3$s.ft, df.c3$db.ft, xlim=c(.4, .8), ylim=c(.4, .8), xlab = "2D Ft", ylab = "3D Ft", main = 
-       "C3")
-abline(0,1)
-```
-
-Notes
-```{r}
-#brp.color <- c("lightseagreen", "firebrick3", "darkorchid3", "#E69F00", "lightseagreen", "firebrick3", "#56B4E9", "#009E73", "#0072B2", "#CC79A7", "#000000")
-#bry.color <-c("#2C8C99", "#e5b400","#f44609","#EF476F","#faa612","#550527", "#688d27","#a10702", "#87B38D","#2C666E", "#4D8B31")
-#accent.color <- c("#D95F02","cornflowerblue", "darkolivegreen", "darkorchid3")
-#brewer.pal(n = 8, name = "Paired") #Pulls a palette from Rcolorbrewer and prints the hex codes
-
-#To use ggsci https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html
-#scales::viridis_pal()(n=20)
-```
-
-Testing how to keep colors the same across plots for samples for morgan
-```{r}
-#Splits sample col by comma
-#df7.sep <- separate(df7, sample, c("samplename", "round", "grain"))
-#df7.sep$samplename <- factor(df7.sep$samplename, levels = c("MM", "DCA", "BF16", "16MFS05", "15MFS07", "Bail", "C50", "FCT"))
-##Setting my color pallete. The order the colors are in matches the the samples. (ie. MM will be red; DCA will be blue; etc.)
-#col.sample <- c("red", "blue", "yellow", "purple", "pink", "green", "orange", "black")
-
-##Plotting my entire dataset
-#ggplot(df7.sep, mapping = aes(s.ft, db.ft, color = samplename)) + 
-  #scale_color_brewer(palette = "Set1", drop = TRUE,limits = levels(df7.sep$samplename)) +geom_point()
-
-##Creating a new dataset by filtering. New dataset only contains mount 2. 
-#df7.sep.mount2 <- df7.sep %>% filter(mount == 2) 
-
-##Plotting mount 2
-#p2 <- ggplot(df7.sep.mount2, mapping= aes(s.ft, db.ft, color=samplename)) + 
-  #scale_color_brewer(palette = "Set1", drop=TRUE, limits = levels(df7.sep$samplename)) +geom_point()
 ```
 
 

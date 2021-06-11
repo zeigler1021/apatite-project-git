@@ -128,10 +128,10 @@ if (param == "volume") {
 
 #Quadrature
 ```{r}
-
 #read in spreadsheet of linear regression values
 quad <- read_excel("./Linear Reg Results.xlsx", sheet="comp")
 
+#function
 error.propagation(quad, "common.only.lm.fixed", "ft", "A", "C")
 
 ```

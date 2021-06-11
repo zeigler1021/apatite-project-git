@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1623444638446.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1584712771",
+    "id" : "93B7D3D7",
+    "lastKnownWriteTime" : 1623447671,
+    "last_content_update" : 1623447671455,
+    "path" : "~/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/apatite-project-git/quadrature:error_propagation_function.R",
+    "project_path" : "quadrature:error_propagation_function.R",
+    "properties" : {
+        "cursorPosition" : "21,0",
+        "scrollLine" : "3",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
