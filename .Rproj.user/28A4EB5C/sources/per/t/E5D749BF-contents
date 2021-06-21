@@ -1,0 +1,275 @@
+---
+title: "Apatite Data_Stats_v5"
+author: "Spencer  Zeigler"
+date: "6/15/2021"
+output: html_document
+editor_options:
+  chunk_output_type: console
+---
+#Uncertainty Calculations
+```{r}
+bootstrap.linreg(gcc,  "ft")
+```
+
+#Quadrature
+```{r}
+#read in spreadsheet of linear regression values
+quad <- read_excel("./Linear Reg Results.xlsx", sheet="comp")
+
+#function
+error.propagation(quad, "bootstrapped.common", "ft", "B", "AB")
+```
+
+
+
+
+##Resources:
+
+* [Bootstrapping Code](https://towardsdatascience.com/bootstrap-sampling-in-r-a7bc9d3ca14a)
+* [Confidence Intervals vs Std Deviation](https://stats.stackexchange.com/questions/151541/confidence-intervals-vs-standard-deviation/377634#:~:text=standard%20deviation,-confidence%2Dinterval%20standard&text=The%2095%25%20confidence%20interval%20gives,a%20range%20of%20~95%25.)
+
+
+
+
+
+##DEAD TO MEEEE
+
+#Quadrature for volume
+```{r}
+quad.df.v <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Linear Reg Results.xlsx", sheet= "vol.reg.master")
+quad.df.v <- quad.df.v[c(53:130),]
+
+quad.df.v <- quad.df.v %>%
+  select(gem, method.grains, slope, sigma.slope, intercept, sigma.intercept) 
+quad.df.v <- quad.df.v[order(quad.df.v$gem),]
+
+        x <- quad.df.v$intercept[19]
+        y <- quad.df.v$intercept[20]
+  u <- quad.df.v$sigma.intercept[19]
+  w <- quad.df.v$sigma.intercept[20]
+
+diff <- x - y
+uncert <- sqrt(u^2 + w^2)
+
+if (abs(diff) < abs(uncert)) {
+  print("Within 1sigma")
+} else {
+    print("Not within 1sigma")
+}
+```
+
+#Quadrature for Ft v2-- using ft.comp
+```{r}
+quad.df.ft <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Linear Reg Results.xlsx", sheet= "ft.comp")
+
+quad.df.ft <- quad.df.ft %>%
+  select(gem, method.grains, slope, sigma.slope, intercept, sigma.intercept) 
+quad.df.ft <- quad.df.ft[order(quad.df.ft$gem),]
+
+        x <- quad.df.ft$slope[7]
+        y <- quad.df.ft$slope[8]
+  u <- quad.df.ft$sigma.slope[7]
+  w <- quad.df.ft$sigma.slope[8]
+
+diff <- x - y
+uncert <- sqrt(u^2 + w^2)
+
+if (abs(diff) < abs(uncert)) {
+  print("Within 1sigma")
+} else {
+    print("Not within 1sigma")
+}
+```
+
+
+####Dead to me
+```{r}
+#SLOPE UNCERT, INTERCEPT=0, VOLUME
+sigma.slope.v.fixed.incp <- function(linreg, x) {
+fit.v <- summary(linreg)
+fit.v <- data.frame(fit.v$coefficients)
+df <- data.frame(twoD = x$s.v,
+                 threeD = x$db.v, 
+                 slope = rep(fit.v[1,1], len= nrow(x)))
+
+delta <- nrow(df) * sum(df$twoD^2) - (sum(df$twoD))^2
+sigma.y <- sqrt(1/(nrow(df)-2)*sum((df$threeD - 0 - df$twoD*df$slope)^2))
+uncert.slope <- sigma.y * sqrt(nrow(df)/delta)
+}
+
+
+#SLOPE UNCERT, INTERCEPT /=/ 0, FT
+sigma.slope.ft <- function(linreg, x) {
+fit.ft <- summary(linreg)
+fit.ft <- data.frame(fit.ft$coefficients)
+df <- data.frame(twoD = x$s.ft,
+                 threeD = x$db.ft, 
+                 intercept = rep(fit.ft[1,1], len=nrow(x)), 
+                 slope = rep(fit.ft[2,1], len= nrow(x)))
+
+delta <- nrow(df) * sum(df$twoD^2) - (sum(df$twoD))^2
+sigma.y <- sqrt(1/(nrow(df)-2)*sum((df$threeD - df$intercept - df$twoD*df$slope)^2))
+uncert.slope <- sigma.y * sqrt(nrow(df)/delta)
+}
+#INTERCEPT UNCERT, INTERCEPT /=/ 0, FT
+sigma.incp.ft <- function(linreg, x) {
+fit.ft <- summary(linreg)
+fit.ft <- data.frame(fit.ft$coefficients)
+df <- data.frame(twoD = x$s.ft,
+                 threeD = x$db.ft, 
+                 intercept = rep(fit.ft[1,1], len=nrow(x)), 
+                 slope = rep(fit.ft[2,1], len= nrow(x)))
+delta <- nrow(df) * sum(df$twoD^2) - (sum(df$twoD))^2
+sigma.y <- sqrt(1/(nrow(df)-2)*sum((df$threeD - df$intercept - df$twoD*df$slope)^2))
+uncert.incept <- sigma.y * sqrt((sum(df$twoD^2))/delta)
+}
+
+
+#SLOPE UNCERT, INTERCEPT /=/ -, VOLUME
+sigma.slope.v <- function(linreg, x) {
+fit.v <- summary(linreg)
+fit.v <- data.frame(fit.v$coefficients)
+df <- data.frame(twoD = x$s.v,
+                 threeD = x$db.v, 
+                 intercept = rep(fit.v[1,1], len=nrow(x)), 
+                 slope = rep(fit.v[2,1], len= nrow(x)))
+
+delta <- nrow(df) * sum(df$twoD^2) - (sum(df$twoD))^2
+sigma.y <- sqrt(1/(nrow(df)-2)*sum((df$threeD - df$intercept - df$twoD*df$slope)^2))
+uncert.slope <- sigma.y * sqrt(nrow(df)/delta)
+}
+#INTERCEPT UNCERT, INTERCEPT /=/ 0, VOLUME
+sigma.incp.v <- function(linreg, x) {
+fit.v <- summary(linreg)
+fit.v <- data.frame(fit.v$coefficients)
+df <- data.frame(twoD = x$s.v,
+                 threeD = x$db.v, 
+                 intercept = rep(fit.v[1,1], len=nrow(x)), 
+                 slope = rep(fit.v[2,1], len= nrow(x)))
+
+delta <- nrow(df) * sum(df$twoD^2) - (sum(df$twoD))^2
+sigma.y <- sqrt(1/(nrow(df)-2)*sum((df$threeD - df$intercept - df$twoD*df$slope)^2))
+uncert.incept <- sigma.y * sqrt((sum(df$twoD^2))/delta)
+}
+
+
+#Function that produces the normalized residual standard error [must run code chunk that adds residual values to dataframe]
+norm.rse <- function(n.resid, n) {
+  sqrt((sum((n.resid)^2)/(n-2)))
+}
+
+#Function that produces the normalized residual standard error [must run code chunk that adds residual values to dataframe]
+norm.rse <- function(n.resid, n) {
+  sqrt((sum((n.resid)^2)/(n-2)))
+}
+
+
+```
+
+
+#Stats Data for A & B- Ft
+```{r}
+x <- 
+robust.ft <- lm(db.ft ~ s.ft, data=x)
+
+#Append Residuals to Dataframes & Calculated Norm. Residual Std Error 
+df.ft.resid <- x %>%
+  mutate(s.ft.resid = resid(robust.ft)) %>%
+  mutate(s.ft.resid.norm = s.ft.resid/db.ft) %>%
+  mutate(s.ft.resid.norm.percent = s.ft.resid.norm*100)
+n.resid <- df.ft.resid$s.ft.resid.norm
+n <- nrow(df.ft.resid)
+
+norm <- norm.rse(n.resid, n)
+
+#For A & B GEM-- formatted for "normal" slope + intercept data
+uncert.slope.ft <- sigma.slope.ft(robust.ft, x)
+uncert.incep.ft <- sigma.incp.ft(robust.ft, x)
+
+
+#Create dataframe with values I need
+values <- summary(robust.ft)
+stats.df.ft <- rbind(slope=values$coefficients[2,1], sigma.slope = uncert.slope.ft, intercept=values$coefficients[1,1], sigma.intercept = uncert.incep.ft, norm.std.error=norm, std.error=values$sigma)
+stats.df.ft<- as.data.frame(t(as.matrix(stats.df.ft)))
+```
+
+#Stats Data for Fixed Intercept- Ft
+```{r}
+x <- 
+robust.zero.ft <- lm(db.ft ~ 0 + s.ft, data=x)
+
+#Append Residuals to Dataframes & Calculated Norm. Residual Std Error 
+y<- resid(robust.zero.ft, na.action = na.exclude)
+
+df.ft.resid <- x %>%
+  mutate(s.ft.resid = y) %>%
+  mutate(s.ft.resid.norm = s.ft.resid/db.ft) %>%
+  mutate(s.ft.resid.norm.percent = s.ft.resid.norm*100)
+n.resid <- df.ft.resid$s.ft.resid.norm
+n <- nrow(df.ft.resid)
+
+norm <- norm.rse(n.resid, n)
+
+#Uncertainty in slope and intercept
+uncert.slope.ft <- slope.uncertainty.ft(robust.zero.ft, x)
+
+#Create dataframe with values I need
+values <- summary(robust.zero.ft)
+stats.df.ft <- rbind(slope=values$coefficients[1,1], sigma.slope = uncert.slope.ft, intercept=0, sigma.intercept = 0, norm.std.error=norm, std.error=values$sigma)
+stats.df.ft <- as.data.frame(t(as.matrix(stats.df.ft)))
+```
+
+#Stats Data for A & B- Volume
+```{r}
+x <- df.ab
+robust.v <- lm(db.v ~ s.v, data=x)
+
+#Append Residuals to Dataframes & Calculated Norm. Residual Std Error 
+df.v.resid <- x %>%
+  mutate(s.v.resid = resid(robust.v)) %>%
+  mutate(s.v.resid.norm = s.v.resid/db.v) %>%
+  mutate(s.v.resid.norm.percent = s.v.resid.norm *100) 
+
+n.resid <- df.v.resid$s.v.resid.norm
+n <- nrow(df.v.resid)
+
+norm <- norm.rse(n.resid, n)
+
+#For A & B GEM-- formatted for "normal" slope + intercept data
+uncert.slope.v <- sigma.slope.v(robust.v, x)
+uncert.incep.v <- sigma.incp.v(robust.v, x)
+
+#Create dataframe with values I need
+values <- summary(robust.v)
+stats.df.v <- rbind(slope=values$coefficients[2,1], sigma.slope = uncert.slope.v, intercept=values$coefficients[1,1], sigma.intercept = uncert.incep.v, norm.std.error=norm, std.error=values$sigma)
+stats.df.v<- as.data.frame(t(as.matrix(stats.df.v)))
+```
+
+#Stats Data for C - Volume
+```{r}
+x <- df.c3
+robust.zero.v <- lm(db.v ~ 0 + s.v, data=x)
+
+#Append Residuals to Dataframes & Calculated Norm. Residual Std Error 
+df.v.resid <- x %>%
+  mutate(s.v.resid = resid(robust.zero.v)) %>%
+  mutate(s.v.resid.norm = s.v.resid/db.v) %>%
+  mutate(s.v.resid.norm.percent = s.v.resid.norm *100) 
+
+n.resid <- df.v.resid$s.v.resid.norm
+n <- nrow(df.v.resid)
+
+norm <- norm.rse(n.resid, n)
+
+#For A & B GEM-- formatted for "normal" slope + intercept data
+uncert.slope.v <- sigma.slope.v.fixed.incp(robust.zero.v, x)
+
+#Create dataframe with values I need
+values <- summary(robust.zero.v)
+stats.df.v <- rbind(slope=values$coefficients[1,1], sigma.slope = uncert.slope.v, intercept=0, sigma.intercept = 0, norm.std.error=norm, std.error=values$sigma)
+stats.df.v<- as.data.frame(t(as.matrix(stats.df.v)))
+```
+
+
+
+
