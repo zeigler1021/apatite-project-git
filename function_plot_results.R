@@ -1,8 +1,11 @@
 plot.results <- function(df, x, y, gem, param) {
   
-  greens <- c("#C777D6", "#41b6c4", "#004529")
-  pinks <- c("#fe9929", "#dd3497", "#49126a")
-  
+  theme_set(theme_light())
+  # greens <- c("#C777D6", "#41b6c4", "#004529")
+  # pinks <- c("#fe9929", "#dd3497", "#49126a")
+  oranges <- c("#FFAD66", "#CC5800", "#662700")
+  blues <- c("#A5DDDF", "#52C4CC", "#006666")
+  # 
   x.var <- unlist(df[,x])
   y.var <- unlist(df[,y])
   
@@ -21,10 +24,11 @@ plot.results <- function(df, x, y, gem, param) {
       geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
       labs(x = "2D", y= "3D") + 
       theme(legend.position = c(.89, .15)) +
-      scale_color_manual(values = pinks,
-                         name= "Geometric Index",
-                         labels= c("A", "B", "C")) +
-      geom_point()
+      scale_color_manual(values = blues) +
+                         #name= "Geometric Index",
+                         #labels= c("A", "B", "C")) +
+      geom_point() +
+      theme(legend.position = "none")
   }
   
   if (gem == "rough") {
@@ -41,11 +45,12 @@ plot.results <- function(df, x, y, gem, param) {
       geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
       geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
       labs(x = "2D", y= "3D") + 
-      theme(legend.position = c(.89, .15)) +
-      scale_color_manual(values = greens, 
-                         name = "Roughness Index",
-                         labels = c("1", "2", "3")) +
-      geom_point(df, mapping=aes(x = x.var, y = y.var, color = as.factor(ri)), size = 2)
+      #theme(legend.position = c(.89, .15)) +
+      scale_color_manual(values = oranges) + 
+                         #name = "Roughness Index",
+                         #labels = c("1", "2", "3")) +
+      geom_point(df, mapping=aes(x = x.var, y = y.var, color = as.factor(ri)), size = 2) +
+      theme(legend.position = "none")
   }
   
   if(param == "surface") {

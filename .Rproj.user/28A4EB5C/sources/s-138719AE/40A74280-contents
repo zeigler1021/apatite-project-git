@@ -15,59 +15,128 @@ ggthemes::wsj_pal(palette = "colors6")
 ggthemes::palette_pander(7)
 jcolors::scale
 ggthemes_data$tableau #colorblind #prints hex codes from ggthemes
+dichromat::colorschemes
 
-#322288
-qual_color <- c("#322288", "#6599cc", "#89ccee", "#44aa99", "#117734", "#989934", "#ddcc77", "#671000", "#cc6677", "#aa4466", "#872155", "#aa4499")
 qual_color_random <- c("#322288", "#aa4499", "#44aa99", "#671000", "#989934", "#6599cc", "#aa4466", "#ddcc77", "#000000")
+cb <- c("#595959", "#5f9ed1", "#c85200")
+cb2 <- c("#f06400", "#949494", "#008CF0")
 
-colorspace::swatchplot(qual_color_random)
+colorspace::swatchplot(tableau_color_pal("Color Blind"))
+colorspace::swatchplot(cb)
+```
+
+```{r}
+ggplot(gcb, mapping = aes(db.ft, s.ft)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ 0 + x, se = TRUE) +
+  geom_abline(slope = 1.024427) + 
+  geom_abline(slope = 1.017293) + #lower
+  geom_abline(slope = 1.032216) #upper
+```
+
+
+Exploring GEM influence on Ft
+```{r}
+common_apatite %>%
+  filter(gc == "B") %>%
+  
+ggplot(mapping=aes(x = s.ft, y = db.ft, color= gc)) + 
+  geom_smooth(method="lm", formula = y ~ 0 + x, se=T) +
+  geom_abline(slope = 0.9761551) + #bootstrapped slope
+  geom_abline(slope = 0.983861344, linetype = 3) + # slope + sd
+  geom_abline(slope = 0.968448856, linetype = 3) + #slope - sd
+  
+  geom_point(size = 2) +
+  labs(title = "Manual 2D vs. Nano-CT 3D Ft", x= "2D Ft", y= "3D Ft") + 
+  scale_color_tableau(palette = "Color Blind",
+                      name= "GEM",
+                      labels= c("B")) +
+  
+  geom_abline(slope=1, intercept = 0) + 
+  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
+  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
+  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
+  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
+
 ```
 
 
 Exploring terminations influence on Ft
 ```{r}
-error.lines()
-
-p + 
-  #xlim(.25, .9) + ylim(.25, .9) +
+common_apatite %>%
+  #filter(gem.geo == "C") %>%
+  
+ggplot(mapping=aes(x = s.ft, y = db.ft, color=np)) + 
+  geom_smooth(method="lm", formula = y ~ 0 + x, se=TRUE, level = .68) +
+  geom_point(size = 2) +
   labs(title = "Manual 2D vs. Nano-CT 3D Ft", x= "2D Ft", y= "3D Ft") + 
   scale_color_tableau(palette = "Color Blind",
                       name= "Np",
                       labels= c("0", "1", "2")) +
-  geom_smooth(mapping=aes(x = s.ft, y = db.ft, color=np), data = common_apatite, method="lm", se=FALSE) +
-  geom_point(common_apatite, mapping=aes(x = s.ft, y = db.ft, color=np), size = 2) 
+  
+  geom_abline(slope=1, intercept = 0) + 
+  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
+  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
+  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
+  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
+
 ```
 
 Exploring terminations influence on volume
 ```{r}
-error.lines(large.error=TRUE) 
-
-p +
-  #xlim(0,750000) + ylim(0, 1000000) +
-  labs(title = "Manual 2D vs. Nano-CT 3D Volume", subtitle = "zoomed out", x= "3D Volume", y= "2D Volume") + 
-  scale_color_manual(values = qual_color_random,
+common_apatite %>%
+ filter(gem.geo == "AB") %>%
+  
+ggplot(mapping=aes(x = s.v, y = db.v, color=np)) +
+  geom_smooth(method="lm", formula = y ~ 0 + x, se=FALSE) +
+  geom_point(size = 2) +
+  labs(title = "Manual 2D vs. Nano-CT 3D Volume", x= "2D Volume", y= "3D Volume") +
+  scale_color_manual(values = cb,
                      name= "Np",
                     labels= c("0", "1", "2")) +
-  geom_smooth(mapping=aes(x = db.v, y = s.v, color=np), data=common_apatite, method="lm", se=FALSE) +
-  geom_point(common_apatite, mapping=aes(x = db.v, y = s.v, color=np), size = 2)
+  
+  xlim(0,750000) + ylim(0, 1000000) +
+  geom_abline(slope=1, intercept = 0) + 
+  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
+  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
+  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
+  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
+  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
+  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
+  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
+  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2)  #40%
+  
 ```
 
 Exploring terminations influence on ESR Ft
 ```{r}
-error.lines()
-p + 
+common_apatite %>%
+  filter(gem.geo == "C") %>%
+  
+  ggplot(mapping=aes(x = s.esr.ft, y = db.esr.ft, color=np)) +
+  geom_smooth(method="lm", formula = y ~ 0 + x, se=FALSE) +
+  geom_point(size = 2) +
   labs(title = "Manual 2D vs. Nano-CT 3D ESR Ft", x= "2D ESR Ft", y= "3D ESR Ft") + 
-  scale_color_discrete_qualitative(
-                     name= "Np",
+  scale_color_manual(values = cb2,
+                    name= "Np",
                     labels= c("0", "1", "2")) +
-  geom_smooth(mapping=aes(x = s.esr.ft, y = db.esr.ft, color=np), data=common_apatite, method="lm", se=FALSE) +
-  geom_point(common_apatite, mapping=aes(x = s.esr.ft, y = db.esr.ft, color=np), size = 2) 
+  
+  geom_abline(slope=1, intercept = 0) + 
+  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
+  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
+  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
+  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
+  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
 ```
 
-```{r}
-plot(apatite$s.v, apatite$db.v)
-abline(0,1)
-```
+
 
 ########## Ft Plots
 
@@ -76,12 +145,11 @@ error.lines()
 
 p +
   labs(title = "Manual 2D vs. Nano-CT 3D Ft", x= "3D Ft", y= "2D Ft") + 
-  scale_color_manual(values= qual_color_random, 
-                     name= "Legend") + 
-                     #labels= c()) +
-  geom_point(a2, mapping=aes(x = db.ft, y = s.ft, color = s.gem), size = 2) +
-  geom_smooth(a2, mapping=aes(x = db.ft, y = s.ft, color=s.gem), method="lm", se=FALSE, formula = y ~ 0 + x) +
-    geom_abline(slope=1.016, intercept = 0, color="red")
+  #scale_color_manual(values= qual_color_random, name= "Legend") + 
+                     
+  geom_point(apatite, mapping=aes(x = db.ft, y = s.ft, color = size.bin), size = 2) 
+  #geom_smooth(apatite, mapping=aes(x = db.ft, y = s.ft, color=s.gem), method="lm", se=FALSE, formula = y ~ 0 + x) +
+   #geom_abline(slope=1.016, intercept = 0, color="red")
 
 ```
 
@@ -426,113 +494,7 @@ ggplot() +
   geom_smooth(mapping=aes(x = s.v, y = db.v, color=gc), data=df7.large, method="lm", se=FALSE)
 ```
 
-########## Other Plots
 
-#Heatmap of GEM
-```{r}
-gemnumber <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Data Comps_v7.xlsx", sheet="gemnumber")
-
-ggplot(gemnumber, aes(gc, ri, fill=value)) +
-  geom_tile() +
-   scale_fill_distiller(palette = "RdPu", direction=1) + 
-  labs(x= "Geometric Classification", y="Roundness Index") +
-  scale_y_reverse() +
-  scale_x_discrete(position="top")
-```
-
-######### Need to be fixed
-
-#Error Bars- Ft
-```{r}
-quad.df.ft <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Linear Reg Results.xlsx", sheet= "ft.comp")
-
-quad.df.ft <- quad.df.ft %>%
-  select(gem, method.grains, slope, sigma.slope, intercept, sigma.intercept, gem.cat) 
-quad.df.ft <- quad.df.ft[order(quad.df.ft$gem),]
-quad.df.ft$gem <- factor(quad.df.ft$gem, levels = c("A1", "A2", "A3", "A", "B1", "B2", "B3", "B", "AB", "C1", "C2", "C3", "C"))
-quad.df.ft$intercept <- as.numeric(as.character(quad.df.ft$intercept))
-
-pal <- c("grey20", "darkorchid4")
-#####################################################################
-
-#Ft error bars, Slope
-ggplot(quad.df.ft, aes(x=gem, y=slope, color=method.grains)) + 
-   scale_color_nejm(palette="default", 
-                    name = "Legend", 
-                    labels= c("Intercept Not Fixed", "Intercept Fixed at 0")) +
-geom_pointrange(aes(ymin=slope-sigma.slope, ymax=slope+sigma.slope, color= method.grains), alpha= .8) +
-  labs(x="GEM", y="Slope")
-```
-
-#Error Bars- Volume
-```{r}
-quad.df.v <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Linear Reg Results.xlsx", sheet= "vol.reg.master")
-quad.df.v <- quad.df.v[c(53:130),]
-
-quad.df.v <- quad.df.v %>%
-  select(gem, method.grains, slope, sigma.slope, intercept, sigma.intercept, gem.cat) 
-quad.df.v <- quad.df.v[order(quad.df.v$gem),]
-
-quad.df.v$gem <- factor(quad.df.v$gem, levels = c("A1", "A2", "A3", "A", "B1", "B2", "B3", "B", "AB", "C1", "C2", "C3", "C"))
-quad.df.v <- quad.df.v %>%
-  #filter(!method.grains == "common.only.lm") %>%
-  #filter(!method.grains == "common.only.lm.fixed") %>%
-  filter(!method.grains == "common.small.rlm") %>%
-  filter(!method.grains == "common.large.rlm") %>%
-  filter(!method.grains == "common.small.lm") %>%
-  filter(!method.grains == "common.large.lm")
-
-#####################################################################
-
-#Volume error bars, Slope
-ggplot(quad.df.v, mapping=aes(x=gem, y=slope, color= method.grains)) + 
-geom_pointrange(aes(ymin=slope-sigma.slope, ymax=slope+sigma.slope)) +
-scale_color_nejm(palette="default") +
-labs(title= "1σ Error Bars on Volume Correction Lines for Each GEM", x="GEM", y="Slope")
-
-#Volume error bars, Intercept
-ggplot(quad.df.v, aes(x=gem, y=intercept, color= gem.cat)) + 
-  scale_color_manual(values=pal, 
-                     name="Legend", 
-                     labels= c("A & B grains", "C Grains")) +
-geom_pointrange(aes(ymin=intercept-sigma.intercept, ymax=intercept+sigma.intercept)) +
-  labs(title= "1σ Error Bars on Volume Correction Line Intercepts for Each GEM", subtitle="Calculated with a WLS Linear Regression, Colored by Dataset Regressed", x="GEM", y="Intercept")
-```
-
-#Read in number_apatite data for plotting and set columns as factor
-```{r}
-number_apatite <- read_excel("./Analyzed vs Observed Binned Apatite Data_rmf_v2_jrm_final.xlsx", sheet = "R Cont")
-number_apatite <- number_apatite[order(number_apatite$analyzed_width),]
-number_apatite<- number_apatite[-c(1063:1102),] #only include grains <160
-number_apatite<- number_apatite[-c(1:11),] #only include grains >40
-
-number_apatite<- number_apatite[-c(1097:1102),] #only include grains <262+
-
-
-as_tibble(number_apatite)
-
-number_apatite$Bin <- factor(number_apatite$Bin, levels = c("40-50", "51-60", "61-70", "71-80", "81-90", "91-100", "101-110", "111-120", "121-130", "131-140", "141-150", "151-160", "161-170"))
-
-number_apatite$size.name <- factor(number_apatite$size.name, levels=c("Small & Rare", "Small & Common","Typical & Common", "Large & Common", "Large & Rare"))
-```
-
-
-#Plot Analyzed vs. Observed Line Graph
-```{r}
-theme_set(theme_classic())
-
-ggplot() +
-  geom_area(number_apatite, stat="bin", fill="grey90", binwidth=5, mapping= aes(x= analyzed_width)) +
-  geom_area(apatite, stat="bin", fill="black", binwidth=5, mapping=aes(x=j.w1)) +
-  #scale_x_continuous(breaks= seq(40, 160, 10)) +
-  #scale_y_continuous(breaks= seq(0, 120, 30), limits = c(0, 120)) +
-  scale_x_continuous(breaks= seq(20, 220, 10)) +
-  scale_y_continuous(breaks= seq(0, 120, 30), limits = c(0, 120)) +
-  labs(x="Width (µm)", y="Number of Grains")
-  #labs(title= "Number of Grains Selected for Nano-CT Analysis as a\nRepresentative Sample of 1100 Apatite Grains Run in the TraIL", x= "Width (µm)", y= "Number of Grains") 
-  #theme(axis.text.x = element_text(angle = 60, vjust = 0.99, hjust=1))
-
-```
 
 
 ############################################################################
@@ -552,25 +514,74 @@ pftr <- plot.results(apatite, "s.ft", "db.ft", "rough", "ft")
 peg <- plot.results(apatite, "s.esr.ft", "db.esr.ft", "geo", "esr")
 per <- plot.results(apatite, "s.esr.ft", "db.esr.ft", "rough", "esr")
 
-(pvg | pvr) / (psg | psr) / (pftg + pftr) / (peg + per) 
+figresults <- (pvg | pvr) / (psg | psr) / (pftg + pftr) / (peg + per) 
 #save 1100 x 1300
 
 ```
 
 2. GEM plot of common grains only with regression slope plotted! 
 ```{r}
-pa1 <- plot.gem(a1, "A1")
-pb1 <- plot.gem(b1, "B1")
-pc1 <- plot.gem(c1, "C1")
-pa2 <- plot.gem(a2, "A2")
-pb2 <- plot.gem(b2, "B2")
-pc2 <- plot.gem(c2, "C2")
-pa3 <- plot.gem(a3, "A3")
-pb3 <- plot.gem(b3, "B3")
-pc3 <- plot.gem(c3, "C3")
-
+pa1 <- plot.gem(common_apatite, "ft", "bootstrap.common", "A1", "ft")
+pb1 <- plot.gem(common_apatite, "ft", "bootstrap.common", "B1", "ft")
+pc1 <- plot.gem(common_apatite, "ft", "bootstrap.common", "C1", "ft")
+pa2 <- plot.gem(common_apatite, "ft", "bootstrap.common", "A2", "ft")
+pb2 <- plot.gem(common_apatite, "ft", "bootstrap.common", "B2", "ft")
+pc2 <- plot.gem(common_apatite, "ft", "bootstrap.common", "C2", "ft")
+pa3 <- plot.gem(common_apatite, "ft", "bootstrap.common", "A3", "ft")
+pb3 <- plot.gem(common_apatite, "ft", "bootstrap.common", "B3", "ft")
+pc3 <- plot.gem(common_apatite, "ft", "bootstrap.common", "C3", "ft")
+pc3
 ft.gem <- (pa1 + pb1 + pc1) / (pa2 + pb2 + pc2) / (pa3 + pb3 + pc3)
 ft.gem
+```
+
+GEM plot of common grains only with regression slope plotted! 
+```{r}
+pa1 <- plot.gem(common_apatite, "volume", "bootstrap.common", "A1", "volume")
+pb1 <- plot.gem(common_apatite, "volume", "bootstrap.common", "B1", "volume")
+pc1 <- plot.gem(common_apatite, "volume", "bootstrap.common", "C1", "volume")
+pa2 <- plot.gem(common_apatite, "volume", "bootstrap.common", "A2", "volume")
+pb2 <- plot.gem(common_apatite, "volume", "bootstrap.common", "B2", "volume")
+pc2 <- plot.gem(common_apatite, "volume", "bootstrap.common", "C2", "volume")
+pa3 <- plot.gem(common_apatite, "volume", "bootstrap.common", "A3", "volume")
+pb3 <- plot.gem(common_apatite, "volume", "bootstrap.common", "B3", "volume")
+pc3 <- plot.gem(common_apatite, "volume", "bootstrap.common", "C3", "volume")
+
+vol.gem <- (pa1 + pb1 + pc1) / (pa2 + pb2 + pc2) / (pa3 + pb3 + pc3)
+vol.gem
+```
+
+4. Analyzed vs. Observed Distribution 
+#Read in number_apatite data for plotting and set columns as factor
+```{r}
+number_apatite <- read_excel("./Analyzed vs Observed Binned Apatite Data_rmf_v2_jrm_final.xlsx", sheet = "R Cont")
+number_apatite <- number_apatite[order(number_apatite$analyzed_width),]
+number_apatite<- number_apatite[-c(1079:1102),] #only include grains <200
+number_apatite<- number_apatite[-c(1:11),] #only include grains >40
+
+
+as_tibble(number_apatite)
+
+number_apatite$Bin <- factor(number_apatite$Bin, levels = c("40-50", "51-60", "61-70", "71-80", "81-90", "91-100", "101-110", "111-120", "121-130", "131-140", "141-150", "151-160", "161-170"))
+
+number_apatite$size.name <- factor(number_apatite$size.name, levels=c("Small & Rare", "Small & Common","Typical & Common", "Large & Common", "Large & Rare"))
+```
+
+#Plot Analyzed vs. Observed Line Graph
+```{r}
+theme_set(theme_classic())
+
+ggplot() +
+  geom_area(number_apatite, stat="bin", fill="grey90", binwidth=5, mapping= aes(x= analyzed_width)) +
+  geom_area(apatite, stat="bin", fill="black", binwidth=5, mapping=aes(x=j.w1)) +
+  #scale_x_continuous(breaks= seq(40, 160, 10)) +
+  #scale_y_continuous(breaks= seq(0, 120, 30), limits = c(0, 120)) +
+  scale_x_continuous(breaks= seq(40, 220, 10)) +
+  scale_y_continuous(breaks= seq(0, 120, 30), limits = c(0, 120)) +
+  labs(x="Width (µm)", y="Number of Grains")
+  #labs(title= "Number of Grains Selected for Nano-CT Analysis as a\nRepresentative Sample of 1100 Apatite Grains Run in the TraIL", x= "Width (µm)", y= "Number of Grains") 
+  #theme(axis.text.x = element_text(angle = 60, vjust = 0.99, hjust=1))
+
 ```
 
 ####################################################################################
@@ -760,8 +771,78 @@ ggplot() +
   scale_color_brewer(palette = "Dark2")
 
 #cbpalette <- c("#88e99a", "#2d595a", "#41bbc5", "#5b588f", "#cddb9b")
-
 ```
 
+######### Need to be fixed
 
+#Error Bars- Ft
+```{r}
+quad.df.ft <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Linear Reg Results.xlsx", sheet= "ft.comp")
+
+quad.df.ft <- quad.df.ft %>%
+  select(gem, method.grains, slope, sigma.slope, intercept, sigma.intercept, gem.cat) 
+quad.df.ft <- quad.df.ft[order(quad.df.ft$gem),]
+quad.df.ft$gem <- factor(quad.df.ft$gem, levels = c("A1", "A2", "A3", "A", "B1", "B2", "B3", "B", "AB", "C1", "C2", "C3", "C"))
+quad.df.ft$intercept <- as.numeric(as.character(quad.df.ft$intercept))
+
+pal <- c("grey20", "darkorchid4")
+#####################################################################
+
+#Ft error bars, Slope
+ggplot(quad.df.ft, aes(x=gem, y=slope, color=method.grains)) + 
+   scale_color_nejm(palette="default", 
+                    name = "Legend", 
+                    labels= c("Intercept Not Fixed", "Intercept Fixed at 0")) +
+geom_pointrange(aes(ymin=slope-sigma.slope, ymax=slope+sigma.slope, color= method.grains), alpha= .8) +
+  labs(x="GEM", y="Slope")
+```
+
+#Error Bars- Volume
+```{r}
+quad.df.v <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Linear Reg Results.xlsx", sheet= "vol.reg.master")
+quad.df.v <- quad.df.v[c(53:130),]
+
+quad.df.v <- quad.df.v %>%
+  select(gem, method.grains, slope, sigma.slope, intercept, sigma.intercept, gem.cat) 
+quad.df.v <- quad.df.v[order(quad.df.v$gem),]
+
+quad.df.v$gem <- factor(quad.df.v$gem, levels = c("A1", "A2", "A3", "A", "B1", "B2", "B3", "B", "AB", "C1", "C2", "C3", "C"))
+quad.df.v <- quad.df.v %>%
+  #filter(!method.grains == "common.only.lm") %>%
+  #filter(!method.grains == "common.only.lm.fixed") %>%
+  filter(!method.grains == "common.small.rlm") %>%
+  filter(!method.grains == "common.large.rlm") %>%
+  filter(!method.grains == "common.small.lm") %>%
+  filter(!method.grains == "common.large.lm")
+
+#####################################################################
+
+#Volume error bars, Slope
+ggplot(quad.df.v, mapping=aes(x=gem, y=slope, color= method.grains)) + 
+geom_pointrange(aes(ymin=slope-sigma.slope, ymax=slope+sigma.slope)) +
+scale_color_nejm(palette="default") +
+labs(title= "1σ Error Bars on Volume Correction Lines for Each GEM", x="GEM", y="Slope")
+
+#Volume error bars, Intercept
+ggplot(quad.df.v, aes(x=gem, y=intercept, color= gem.cat)) + 
+  scale_color_manual(values=pal, 
+                     name="Legend", 
+                     labels= c("A & B grains", "C Grains")) +
+geom_pointrange(aes(ymin=intercept-sigma.intercept, ymax=intercept+sigma.intercept)) +
+  labs(title= "1σ Error Bars on Volume Correction Line Intercepts for Each GEM", subtitle="Calculated with a WLS Linear Regression, Colored by Dataset Regressed", x="GEM", y="Intercept")
+```
+
+########## Other Plots
+
+#Heatmap of GEM
+```{r}
+gemnumber <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Data Comps_v7.xlsx", sheet="gemnumber")
+
+ggplot(gemnumber, aes(gc, ri, fill=value)) +
+  geom_tile() +
+   scale_fill_distiller(palette = "RdPu", direction=1) + 
+  labs(x= "Geometric Classification", y="Roundness Index") +
+  scale_y_reverse() +
+  scale_x_discrete(position="top")
+```
 

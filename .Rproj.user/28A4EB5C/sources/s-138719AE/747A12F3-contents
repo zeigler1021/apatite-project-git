@@ -18,31 +18,36 @@ editor_options:
 #Setup
 
 ```{r setup, include=FALSE}
+
+#for stats
 library(MASS) 
-library(latex2exp) 
-library(readxl) 
-library(ggplot2)
-library(tidyverse) 
-library(tidyr) 
-library(scales) 
-library(dplyr) 
-library(readr) 
-library(xlsx) 
 library(performance) #check model
-library(MASS)
-library(plotly)
-library(RColorBrewer)
-library(ggsci)
-library(patchwork)
-library(viridis)
-library(glue)
-library(tinytex)
-library(colorspace)
-#library(datapaste)
-library(ggthemes)
-library(jcolors)
-library(knitr)
 library(tidymodels)
+
+#tidyverse
+library(tidyverse) #purr, dplyr, tidyr, readr, readxl, tibble, stringr, forcats, ggplot2
+library(broom)
+library(scales) 
+library(readxl) 
+library(glue)
+
+#for viz
+library(plotly)
+library(patchwork)
+library(RColorBrewer)
+library(colorspace)
+library(jcolors)
+library(viridis)
+library(ggsci)
+library(ggthemes)
+
+#for knitting
+library(knitr)
+library(tinytex)
+library(latex2exp) 
+
+#library(xlsx) 
+#library(datapaste)
 
 par(mfrow=c(1, 1)) #how to arrange plots, 1 per row, 1 per column
 
@@ -134,6 +139,7 @@ source("function_model_diagnostics.R")
 Plotting functions
 ```{r}
 source("function_error_lines.R")
+source("function_plot_results.R")
 ```
 
 

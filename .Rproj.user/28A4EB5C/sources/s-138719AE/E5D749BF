@@ -5,16 +5,16 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "1012369305",
+    "hash" : "2486064161",
     "id" : "E5D749BF",
-    "lastKnownWriteTime" : 1624291994,
-    "last_content_update" : 1624291994606,
+    "lastKnownWriteTime" : 1626200785,
+    "last_content_update" : 1626200785703,
     "path" : "~/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/apatite-project-git/2_Apatite Data_Stats.Rmd",
     "project_path" : "2_Apatite Data_Stats.Rmd",
     "properties" : {
         "chunk_output_type" : "console",
-        "cursorPosition" : "11,0",
-        "scrollLine" : "0"
+        "cursorPosition" : "36,19",
+        "scrollLine" : "30"
     },
     "read_only" : false,
     "read_only_alternatives" : [
