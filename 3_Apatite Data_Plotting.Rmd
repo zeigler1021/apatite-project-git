@@ -20,38 +20,25 @@ dichromat::colorschemes
 qual_color_random <- c("#322288", "#aa4499", "#44aa99", "#671000", "#989934", "#6599cc", "#aa4466", "#ddcc77", "#000000")
 cb <- c("#595959", "#5f9ed1", "#c85200")
 cb2 <- c("#f06400", "#949494", "#008CF0")
+cb3 <- c("#4ACBFA", "#FAA35E", "#6E61DB")
 
 colorspace::swatchplot(tableau_color_pal("Color Blind"))
-colorspace::swatchplot(cb)
-```
-
-```{r}
-ggplot(gcb, mapping = aes(db.ft, s.ft)) +
-  geom_point() +
-  geom_smooth(method = "lm", formula = y ~ 0 + x, se = TRUE) +
-  geom_abline(slope = 1.024427) + 
-  geom_abline(slope = 1.017293) + #lower
-  geom_abline(slope = 1.032216) #upper
+colorspace::swatchplot(cb3)
 ```
 
 
-Exploring GEM influence on Ft
+Exploring Ft
 ```{r}
 common_apatite %>%
-  filter(gc == "B") %>%
+  #filter(gc == "B") %>%
   
 ggplot(mapping=aes(x = s.ft, y = db.ft, color= gc)) + 
-  geom_smooth(method="lm", formula = y ~ 0 + x, se=T) +
-  geom_abline(slope = 0.9761551) + #bootstrapped slope
-  geom_abline(slope = 0.983861344, linetype = 3) + # slope + sd
-  geom_abline(slope = 0.968448856, linetype = 3) + #slope - sd
-  
+  geom_smooth(method= "lm", formula = y ~ 0 + x, se = F) +
   geom_point(size = 2) +
-  labs(title = "Manual 2D vs. Nano-CT 3D Ft", x= "2D Ft", y= "3D Ft") + 
-  scale_color_tableau(palette = "Color Blind",
-                      name= "GEM",
-                      labels= c("B")) +
   
+  labs(title = "Manual 2D vs. Nano-CT 3D Ft", x= "2D Ft", y= "3D Ft") + 
+  scale_color_tableau(palette = "Color Blind") +
+                      
   geom_abline(slope=1, intercept = 0) + 
   geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
   geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
@@ -62,42 +49,16 @@ ggplot(mapping=aes(x = s.ft, y = db.ft, color= gc)) +
 
 ```
 
-
-Exploring terminations influence on Ft
+Exploring Volume
 ```{r}
-common_apatite %>%
-  #filter(gem.geo == "C") %>%
+p <- common_apatite %>%
+ #filter(gem.geo == "AB") %>%
   
-ggplot(mapping=aes(x = s.ft, y = db.ft, color=np)) + 
-  geom_smooth(method="lm", formula = y ~ 0 + x, se=TRUE, level = .68) +
-  geom_point(size = 2) +
-  labs(title = "Manual 2D vs. Nano-CT 3D Ft", x= "2D Ft", y= "3D Ft") + 
-  scale_color_tableau(palette = "Color Blind",
-                      name= "Np",
-                      labels= c("0", "1", "2")) +
-  
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
-
-```
-
-Exploring terminations influence on volume
-```{r}
-common_apatite %>%
- filter(gem.geo == "AB") %>%
-  
-ggplot(mapping=aes(x = s.v, y = db.v, color=np)) +
-  geom_smooth(method="lm", formula = y ~ 0 + x, se=FALSE) +
+ggplot(mapping=aes(x = s.v, y = db.v, color=gc, key = sample)) +
+  geom_smooth(method= "lm", formula = y ~ 0 + x, se = FALSE) +
   geom_point(size = 2) +
   labs(title = "Manual 2D vs. Nano-CT 3D Volume", x= "2D Volume", y= "3D Volume") +
-  scale_color_manual(values = cb,
-                     name= "Np",
-                    labels= c("0", "1", "2")) +
+  scale_color_manual(values = cb) +
   
   xlim(0,750000) + ylim(0, 1000000) +
   geom_abline(slope=1, intercept = 0) + 
@@ -112,20 +73,19 @@ ggplot(mapping=aes(x = s.v, y = db.v, color=np)) +
   geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
   geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2)  #40%
   
+ggplotly(p,  tooltip = c("key"))
 ```
 
-Exploring terminations influence on ESR Ft
+Exploring ESR Ft
 ```{r}
 common_apatite %>%
   filter(gem.geo == "C") %>%
   
-  ggplot(mapping=aes(x = s.esr.ft, y = db.esr.ft, color=np)) +
-  geom_smooth(method="lm", formula = y ~ 0 + x, se=FALSE) +
+  ggplot(mapping=aes(x = s.esr.ft, y = db.esr.ft, color = np)) +
+  geom_smooth(method= "lm", formula = y ~ 0 + x, se = FALSE) +
   geom_point(size = 2) +
   labs(title = "Manual 2D vs. Nano-CT 3D ESR Ft", x= "2D ESR Ft", y= "3D ESR Ft") + 
-  scale_color_manual(values = cb2,
-                    name= "Np",
-                    labels= c("0", "1", "2")) +
+  scale_color_manual(values = cb2) +
   
   geom_abline(slope=1, intercept = 0) + 
   geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
@@ -136,366 +96,236 @@ common_apatite %>%
   geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
 ```
 
-
-
-########## Ft Plots
-
+Exploring 'uncertainty' in Ft correction: 
+## Rare vs. Common
 ```{r}
-error.lines()
+res_plotting %>%
+  filter(sign == "total") %>%
+  ggplot() +
+  geom_errorbar(aes(x = value, ymax = (median_res + sd_res), ymin = (median_res - sd_res))) +
+  geom_point(aes(value, median_res)) +
+  labs(x = "Size Category", y = "Residual")
+```
 
-p +
-  labs(title = "Manual 2D vs. Nano-CT 3D Ft", x= "3D Ft", y= "2D Ft") + 
-  #scale_color_manual(values= qual_color_random, name= "Legend") + 
-                     
-  geom_point(apatite, mapping=aes(x = db.ft, y = s.ft, color = size.bin), size = 2) 
-  #geom_smooth(apatite, mapping=aes(x = db.ft, y = s.ft, color=s.gem), method="lm", se=FALSE, formula = y ~ 0 + x) +
-   #geom_abline(slope=1.016, intercept = 0, color="red")
+#Ft
+```{r}
+apatite %>%
+  filter(gem.geo == "C") %>%
+ggplot(aes(j.w1, percent.diff, color = ri)) +
+  scale_color_manual(values = cb3) +
+  geom_point() +
+  geom_abline(slope = 0, intercept = 0) +
+  labs(x = "Max Width", y = "Residuals as % Difference", title = "Ft Residuals as % difference, C grains, Roughness")
+```
 
+#Volume
+```{r}
+apatite %>%
+  #filter(gem.geo == "AB") %>%
+ggplot(aes(j.w1, percent.diff, color = ri, key = sample)) +
+  scale_color_manual(values = cb3) +
+  geom_point() +
+  geom_abline(slope = 0, intercept = 0) +
+  labs(x = "Max Width", y = "Residuals as % Difference", title = "Volume Residuals as % difference, all grains, Roughness")
+
+#ggplotly(p, tooltip = c("key"))
 ```
 
 
-########Volume
 ```{r}
-error.lines(TRUE)
+ggplot(c_all, aes(j.w1, c_all_residuals_ft[,1001], color = size.cat)) +
+  geom_point(size = 2) +
+  geom_abline(slope = 0, intercept = 0, size = 1.1) +
+  scale_color_manual(values = qual_color_random) +
+  labs(x = "Grain Width (µm)", y= "Residuals", title = "All Ellipsoid Grains, Colored by Rare vs. Common") +
+    geom_segment(aes(x = 40, xend = 51,
+                     y = all_res[[3,2]], yend = all_res[[3,2]]),
+                 color = "red") + #small,rare,all
+    geom_segment(aes(x = 51, xend = 101, 
+                     y = all_res[[1,2]], yend =all_res[[1,2]]), 
+                 color = "red") + #common,all
+    geom_segment(aes(x = 101, xend = 161, 
+                     y = all_res[[2,2]], yend = all_res[[2,2]]), 
+                 color = "red") + #large,rare,all
+    geom_segment(aes(x = 40, xend = 51,
+                     y = pos_res[[3,2]], yend = pos_res[[3,2]]),
+                 linetype = 3, color = "black") + #small,rare,pos
+    geom_segment(aes(x = 40, xend = 51,
+                     y = neg_res[[3,2]], yend = neg_res[[3,2]]),
+                 linetype = 3, color = "black") + #small,rare,neg
+    geom_segment(aes(x =51, xend = 101, 
+                     y = pos_res[[1,2]], yend = pos_res[[1,2]]), 
+                 linetype = 3, color = "black") + #common,pos
+    geom_segment(aes(x =51, xend = 101, 
+                     y = neg_res[[1,2]], yend = neg_res[[1,2]]), 
+                 linetype = 3, color = "black") + #common,neg
+    geom_segment(aes(x = 101, xend = 161, 
+                     y = pos_res[[2,2]], yend = pos_res[[2,2]]), 
+                 linetype = 3, color = "black") + #large,rare,post
+    geom_segment(aes(x = 101, xend = 161, 
+                     y = neg_res[[2,2]], yend = neg_res[[2,2]]), 
+                 linetype = 3, color = "black") #large,rare,neg
 
-p +
-  labs(title = "Manual 2D vs. Nano-CT 3D Volume", x= "3D Volume", y= "2D Volume") + 
-  scale_color_manual(values= qual_color_random, 
-                     name= "Legend") + 
-                     #labels= c()) +
-  geom_point(a2, mapping=aes(x = db.v, y = s.v, color = s.gem), size = 2) +
-  geom_smooth(a2, mapping=aes(x = db.v, y = s.v, color=s.gem), method="lm", se=FALSE, formula = y ~ 0 + x) +
-  geom_abline(slope=0., intercept = 0, color="red")
-
+#ggplotly(p, tooltip = c("key"))
+#outlier at -0.05 and w = 100 is 16MFs05,2a1,7
 ```
 
-
-Ft- All Grains- OG- Scatterplot
+## Size Categories
 ```{r}
-error.lines()
-p +
-  labs(title = "Manual 2D vs. Nano-CT 3D Ft", subtitle="Calculated Using Ketcham et al., 2011", x= "2D Ft", y= "3D Ft") + 
-  scale_color_brewer(palette="Dark2", 
-                     name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-  geom_point(apatite, mapping=aes(x = s.ft.og, y = db.ft, color = gc), size = 2)
-```
-
-Ft- All Grains- OG vs Max - Scatterplot
-```{r}
-ggplot() + 
-  xlim(.25, .9) + ylim(.25, .9) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  labs(title = "Manual 2D vs. Nano-CT 3D Ft", subtitle="Both Geo, Both Widths (OG) vs Max Widths", x= "2D Ft", y= "3D Ft") + 
-  #scale_color_manual(palette=c("grey15", "cornflowerblue"), name= "Legend", labels= c("Both Widths, Both Geo", "Max Widths, Both Geo")) +
-  geom_point(df7, mapping=aes(x = s.ft.og, y = db.ft), color= "grey15", size = 2) +
-  geom_point(df7, mapping=aes(x=s.ft, y=db.ft), color= "cornflowerblue", size=2)
-```
-
-Ft- All Grains- Max- Scatterplot + Regression
-```{r}
-ggplot() + 
-  #xlim(.25, .9) + ylim(.25, .9) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  labs(title = "Manual 2D vs. Nano-CT 3D Ft", subtitle="All Grains, With Regression Lines (lm)", x= "2D Ft", y= "3D Ft") + 
-  scale_color_brewer(palette= "Set1", 
-                     name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-  geom_smooth(mapping=aes(x = s.ft, y = db.ft, color=gc), data=df7, method="lm", se=FALSE) +
-  geom_point(df7, mapping=aes(x = s.ft, y = db.ft, color=gc), size = 2) 
-```
-
-#Ft- Common Only- Max- Scatterplot + Regression
-```{r}
-ggplot() + 
-  #xlim(.25, .9) + ylim(.25, .9) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  labs(title = "Manual 2D vs. Nano-CT 3D Ft", subtitle="Common Grains Only, With Regression Lines (lm)", x= "2D Ft", y= "3D Ft") + 
-  scale_color_viridis(discrete = TRUE, 
-                     name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-  #geom_smooth(mapping=aes(x=s.ft, y=db.ft, color=gc), data= df7.rm, method="lm", se=FALSE) +
-  geom_point(df7, mapping=aes(s.ft, db.ft), color= "grey70", size=2) +
-  geom_point(df7.rm, mapping=aes(x = s.ft, y = db.ft, color=gc), size = 2)
-
-```
-
-#Ft- Common + Small Grains- Max- Scatterplot + Regression
-```{r}
-ggplot() + 
-  #xlim(.25, .9) + ylim(.25, .9) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  labs(title = "Manual 2D vs. Nano-CT 3D Ft", subtitle="Common + Small Grains, With Regression Lines (lm)", x= "2D Ft", y= "3D Ft") + 
-  scale_color_brewer(palette= "Dark2", 
-                     name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-                  
-  geom_point(df7.small, mapping=aes(x = s.ft, y = db.ft, color=gc), size = 2) +
-  geom_smooth(mapping=aes(x = s.ft, y = db.ft, color=gc), data= df7.small, method="lm", se=FALSE) 
-
-#ggplotly(ftp4, tooltip=c("key"))
-```
-
-#Ft- Common + Large Grains- Max- Scatterplot
-```{r}
-ggplot() + 
-  #xlim(.25, .9) + ylim(.25, .9) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
+ggplot(c_all, aes(j.w1, c_all_residuals_volume[,1001], color = size.name)) +
+  #xlim(35,110) + ylim(-350, 350) +
+  geom_point(size = 2) +
+  geom_abline(slope = 0, intercept = 0, size = 1.1) +
+  scale_color_manual(values = qual_color_random) +
+  labs(x = "Grain Width (µm)", y= "Residuals", title = "All Ellipsoid Grains, Colored by Size Categories") +
+    # geom_segment(aes(x = 40, xend = 51,
+    #                  y = all_res[[1,2]], yend = all_res[[1,2]]),
+    #              color = "red") + #small,rare,all
+    geom_segment(aes(x = 51, xend = 61, 
+                     y = all_res[[2,2]], yend =all_res[[2,2]]), 
+                 color = "red") + #small,common,all
+    geom_segment(aes(x = 61, xend = 81, 
+                     y = all_res[[3,2]], yend =all_res[[3,2]]), 
+                 color = "red") + #common,all
+    geom_segment(aes(x = 81, xend = 101, 
+                     y = all_res[[4,2]], yend = all_res[[4,2]]), 
+                 color = "red") + #large,common,all
+    geom_segment(aes(x = 101, xend = 111, 
+                     y = all_res[[5,2]], yend = all_res[[5,2]]), 
+                 color = "red") + #large,rare,all
   
-  labs(title = "Manual 2D vs. Nano-CT 3D Ft", subtitle="Common + Large Grains, With Regression Lines (lm)", x= "2D Ft", y= "3D Ft") + 
- scale_color_brewer(palette= "Dark2", 
-                     name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
+    # geom_segment(aes(x = 40, xend = 51, 
+    #                  y = pos_res[[1,2]], yend = pos_res[[1,2]]), 
+    #              linetype = 3, color = "black") + #small,rare,pos
+    # geom_segment(aes(x = 40, xend = 51, 
+    #                  y = neg_res[[1,2]], yend = neg_res[[1,2]]), 
+    #              linetype = 3, color = "black") + #small,rare,neg
+    
+    geom_segment(aes(x = 51, xend = 61, 
+                     y = pos_res[[2,2]], yend = pos_res[[2,2]]), 
+                 linetype = 3, color = "black") + #small,commmon,pos
+    geom_segment(aes(x = 51, xend = 61, 
+                     y = neg_res[[2,2]], yend = neg_res[[2,2]]), 
+                 linetype = 3, color = "black") + #small,common,neg
   
-  geom_point(df7.large, mapping=aes(x = s.ft, y = db.ft, color=gc), size = 2) +
-  geom_smooth(mapping=aes(x = s.ft, y = db.ft, color=gc), data= df7.large, method="lm", se=FALSE) 
-
-
-#ggplotly(ftp4, tooltip=c("key"))
-```
-
-#Ft- Results Plot
-```{r}
-ggplot() + 
-  #xlim(.25, .9) + ylim(.25, .9) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  labs( x= "2D Ft", y= "3D Ft") + 
-  scale_color_manual(values= c("#453781FF", "#3CBC75FF", "#DCE318FF", "#20A386FF", "#238A8DFF", "#FDE725FF", "#74D055FF", "#39558CFF", "#440154FF"), 
-                     name= "Geometric Index",
-                    labels= c("A and B", "C")) +
-  #geom_smooth(mapping=aes(x=s.ft, y=db.ft, color=s.gem), data= df.ab, method="lm", se=FALSE, size=1.5) +
-  geom_abline(mapping=aes(slope =0.9749, intercept =0, color= s.gem), data=ab, size=1.2) +
-  #geom_smooth(mapping=aes(x=s.ft, y=db.ft, color=gc), data= df.gcc, method="lm", se=FALSE, size=1.5) +
-  geom_abline(mapping=aes(slope =0.9284, intercept =0, color= gc), data=gcc, size=1.2) +
-  geom_point(apatite, mapping=aes(s.ft, db.ft), color= "grey70", size=2) +
-  geom_point(ab, mapping=aes(x = s.ft, y = db.ft, color=s.gem), size = 2) +
-  geom_point(gcc, mapping=aes(s.ft, db.ft, color=gc), size=2)
-
-```
-
-
-Common Grains Only plotted by Geometry and colored by roughness. Regression line based on geometry plotted in red. 
-```{r}
-pa <- ggplot() + 
-  geom_abline(slope = 1, intercept = 0, linetype = 2) +
-  geom_abline(slope = 0.9754, intercept = 0, color = "red") +
-  geom_point(gca, mapping=aes(s.ft, db.ft, color=as.factor(ri)), size =2) + 
-  scale_color_viridis(discrete = TRUE) +
-  labs(x= "2D Ft", y= "3D Ft", title ="A", subtitle = "slope= 0.9754; std error= 0.02162") 
-
-pb <- ggplot() + 
-  geom_abline(slope = 1, intercept = 0, linetype =2) + 
-  geom_abline(slope = 0.9746, intercept = 0, color = "red") +
-  geom_point(gcb, mapping=aes(s.ft, db.ft, color=as.factor(ri)), size =2) + 
-  scale_color_viridis(discrete = TRUE) +
-  labs(x= "2D Ft", y= "3D Ft", title ="B", subtitle = "slope= 0.9746; std error= 0.02518") 
-
-pc <- ggplot() + 
-  geom_abline(slope = 1, intercept = 0, linetype = 2) + 
-  geom_abline(slope = 0.9284, intercept = 0, color = "red") +
-  geom_point(gcc, mapping=aes(s.ft, db.ft, color=as.factor(ri)), size =2) + 
-  scale_color_viridis(discrete = TRUE) +
-  labs(x= "2D Ft", y= "3D Ft", title ="C", subtitle = "slope= 0.9284; std error= 0.02453") 
-
-pa / pb / pc
-```
-
-Common Grains Only plotted by Roughness and colored by geometry. Regression line based on roughness plotted in red. 
-```{r}
-p1 <- ggplot() + 
-  geom_abline(slope = 1, intercept = 0, linetype = 2) +
-  geom_abline(slope = 0.975, intercept = 0, color = "red") +
-  geom_point(ri1, mapping=aes(s.ft, db.ft, color=gc), size =2) + 
-  scale_color_viridis(discrete = TRUE) +
-  labs(x= "2D Ft", y= "3D Ft", title ="1", subtitle = "slope= 0.975; std error= 0.02199") 
-
-p2 <- ggplot() + 
-  geom_abline(slope = 1, intercept = 0, linetype =2) + 
-  geom_abline(slope = 0.9713, intercept = 0, color = "red") +
-  geom_point(ri2, mapping=aes(s.ft, db.ft, color=gc), size =2) + 
-  scale_color_viridis(discrete = TRUE) +
-  labs(x= "2D Ft", y= "3D Ft", title ="2", subtitle = "slope= 0.9713; std error= 0.02226") 
-
-p3 <- ggplot() + 
-  geom_abline(slope = 1, intercept = 0, linetype = 2) + 
-  geom_abline(slope = 0.9478, intercept = 0, color = "red") +
-  geom_point(ri3, mapping=aes(s.ft, db.ft, color=gc), size =2) + 
-  scale_color_viridis(discrete = TRUE) +
-  labs(x= "2D Ft", y= "3D Ft", title ="3", subtitle = "slope= 0.9478; std error= 0.03478") 
-
-p1 / p2 / p3
-```
-
-
-
-########## Volume Plots
-
-GEM plots of common grains only with regression slope plotted! 
-```{r}
-pa1 <- plot.gem(a1, "A1", vol = T)
-pb1 <- plot.gem(b1, "B1", vol = T)
-pc1 <- plot.gem(c1, "C1", vol = T)
-pa2 <- plot.gem(a2, "A2", vol = T)
-pb2 <- plot.gem(b2, "B2", vol = T)
-pc2 <- plot.gem(c2, "C2", vol = T)
-pa3 <- plot.gem(a3, "A3", vol = T)
-pb3 <- plot.gem(b3, "B3", vol = T)
-pc3 <- plot.gem(c3, "C3", vol = T)
-
-v.gem <- (pa1 + pb1 + pc1) / (pa2 + pb2 + pc2) / (pa3 + pb3 + pc3)
-v.gem
-```
-
-
-
-#Volume- All Grains- OG- Scatterplot
-```{r}
-ggplot() + 
-  xlim(0,750000) + ylim(0, 1000000) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
-  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
-  labs(title = "Manual 2D vs. Nano-CT 3D Volume", subtitle="Calculated Using Ketcham et al. 2011 with W1 and W2", x= "2D Volume", y= "3D Volume") + 
-   scale_color_d3(palette= "category10", 
-                     name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-  #scale_shape_manual(values=c(15, 16, 17), name= "Roughness Index", labels=c("1", "2", "3")) +
+    geom_segment(aes(x =61, xend = 81, 
+                     y = pos_res[[3,2]], yend = pos_res[[3,2]]), 
+                 linetype = 3, color = "black") + #common,pos
+    geom_segment(aes(x =61, xend = 81, 
+                     y = neg_res[[3,2]], yend = neg_res[[3,2]]), 
+                 linetype = 3, color = "black") + #common,neg
   
-  geom_point(df7, mapping=aes(x = s.v, y = db.v, color = gc), size = 2)
+    geom_segment(aes(x = 81, xend = 101, 
+                     y = pos_res[[4,2]], yend = pos_res[[4,2]]), 
+                 linetype = 3, color = "black") + #large,common,post
+    geom_segment(aes(x = 81, xend = 101, 
+                     y = neg_res[[4,2]], yend = neg_res[[4,2]]), 
+                 linetype = 3, color = "black") + #large,common,neg
+    geom_segment(aes(x = 101, xend = 111, 
+                     y = pos_res[[5,2]], yend = pos_res[[5,2]]), 
+                 linetype = 3, color = "black") + #large,rare,post
+    geom_segment(aes(x = 101, xend = 111, 
+                     y = neg_res[[5,2]], yend = neg_res[[5,2]]), 
+                 linetype = 3, color = "black") #large,rare,neg
 ```
 
-#Volume- All Grains- Max- Scatterplot + Regression
+
+Exploring 'uncertainty' in Volume correction: 
+## Rare vs. Common
 ```{r}
-error.lines(TRUE)
-p + 
-  labs(title = "Manual 2D vs. Nano-CT 3D Volume", x= "2D Volume", y= "3D Volume") + 
-  scale_color_brewer(palette= "Set1", 
-                    name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-  geom_point(apatite, mapping=aes(x = s.v, y = db.v, color=gc), size = 2) +               
-  geom_smooth(mapping=aes(x = s.v, y = db.v, color=gc), data=apatite, method="lm", se=FALSE) +
-  geom_abline(slope= 0.774, intercept = 33202)
+ggplot(ab_all, aes(j.w1, ab_all_residuals_volume[,1001], color = size.cat)) +
+  geom_point(size = 2) +
+  geom_abline(slope = 0, intercept = 0, size = 1.1) +
+  scale_color_manual(values = qual_color_random) +
+  labs(x = "Grain Width (µm)", y= "Residuals", title = "All Hexagonal Grains, Colored by Rare vs. Common") +
+    geom_segment(aes(x = 40, xend = 51,
+                     y = all_res[[3,2]], yend = all_res[[3,2]]),
+                 color = "red") + #small,rare,all
+    geom_segment(aes(x = 51, xend = 101, 
+                     y = all_res[[1,2]], yend =all_res[[1,2]]), 
+                 color = "red") + #common,all
+    geom_segment(aes(x = 101, xend = 161, 
+                     y = all_res[[2,2]], yend = all_res[[2,2]]), 
+                 color = "red") + #large,rare,all
+    geom_segment(aes(x = 40, xend = 51, 
+                     y = pos_res[[3,2]], yend = pos_res[[3,2]]), 
+                 linetype = 3, color = "black") + #small,rare,pos
+    geom_segment(aes(x = 40, xend = 51, 
+                     y = neg_res[[3,2]], yend = neg_res[[3,2]]), 
+                 linetype = 3, color = "black") + #small,rare,neg
+    geom_segment(aes(x =51, xend = 101, 
+                     y = pos_res[[1,2]], yend = pos_res[[1,2]]), 
+                 linetype = 3, color = "black") + #common,pos
+    geom_segment(aes(x =51, xend = 101, 
+                     y = neg_res[[1,2]], yend = neg_res[[1,2]]), 
+                 linetype = 3, color = "black") + #common,neg
+    geom_segment(aes(x = 101, xend = 161, 
+                     y = pos_res[[2,2]], yend = pos_res[[2,2]]), 
+                 linetype = 3, color = "black") + #large,rare,post
+    geom_segment(aes(x = 101, xend = 161, 
+                     y = neg_res[[2,2]], yend = neg_res[[2,2]]), 
+                 linetype = 3, color = "black") #large,rare,neg
+
 ```
 
-#Volume- Common Grains Only- Max- Scatterplot + Regression
+## Size Categories
 ```{r}
-ggplot() + 
-  xlim(0,750000) + ylim(0,750000) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
-  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
-  labs(title = "Manual 2D vs. Nano-CT 3D Volume", subtitle="Common Grains Only, With Regression Lines (lm), Zoomed", x= "2D Volume", y= "3D Volume") + 
- scale_color_d3(palette= "category10", 
-                     name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-                   
-  geom_point(df7, mapping=aes(x = s.v, y = db.v, color=gc), size = 2) +
-  geom_smooth(mapping=aes(x = s.v, y = db.v, color=gc), data=df7, method="lm", se=FALSE) 
+ggplot(ab_all, aes(j.w1, ab_all_residuals_volume[,1001], color = size.name)) +
+  #xlim(35,110) + ylim(-350, 350) +
+  geom_point(size = 2) +
+  geom_abline(slope = 0, intercept = 0, size = 1.1) +
+  scale_color_manual(values = qual_color_random) +
+  labs(x = "Grain Width (µm)", y= "Residuals", title = "All Hexagonal Grains, Colored by Size Categories") +
+    geom_segment(aes(x = 40, xend = 51,
+                     y = all_res[[1,2]], yend = all_res[[1,2]]),
+                 color = "red") + #small,rare,all
+    geom_segment(aes(x = 51, xend = 61, 
+                     y = all_res[[2,2]], yend =all_res[[2,2]]), 
+                 color = "red") + #small,common,all
+    geom_segment(aes(x = 61, xend = 81, 
+                     y = all_res[[3,2]], yend =all_res[[3,2]]), 
+                 color = "red") + #common,all
+    geom_segment(aes(x = 81, xend = 101, 
+                     y = all_res[[4,2]], yend = all_res[[4,2]]), 
+                 color = "red") + #large,common,all
+    geom_segment(aes(x = 101, xend = 161, 
+                     y = all_res[[5,2]], yend = all_res[[5,2]]), 
+                 color = "red") + #large,rare,all
+  
+    geom_segment(aes(x = 40, xend = 51, 
+                     y = pos_res[[1,2]], yend = pos_res[[1,2]]), 
+                 linetype = 3, color = "black") + #small,rare,pos
+    geom_segment(aes(x = 40, xend = 51, 
+                     y = neg_res[[1,2]], yend = neg_res[[1,2]]), 
+                 linetype = 3, color = "black") + #small,rare,neg
+    
+    geom_segment(aes(x = 51, xend = 61, 
+                     y = pos_res[[2,2]], yend = pos_res[[2,2]]), 
+                 linetype = 3, color = "black") + #small,commmon,pos
+    geom_segment(aes(x = 51, xend = 61, 
+                     y = neg_res[[2,2]], yend = neg_res[[2,2]]), 
+                 linetype = 3, color = "black") + #small,common,neg
+  
+    geom_segment(aes(x =61, xend = 81, 
+                     y = pos_res[[3,2]], yend = pos_res[[3,2]]), 
+                 linetype = 3, color = "black") + #common,pos
+    geom_segment(aes(x =61, xend = 81, 
+                     y = neg_res[[3,2]], yend = neg_res[[3,2]]), 
+                 linetype = 3, color = "black") + #common,neg
+  
+    geom_segment(aes(x = 81, xend = 101, 
+                     y = pos_res[[4,2]], yend = pos_res[[4,2]]), 
+                 linetype = 3, color = "black") + #large,common,post
+    geom_segment(aes(x = 81, xend = 101, 
+                     y = neg_res[[4,2]], yend = neg_res[[4,2]]), 
+                 linetype = 3, color = "black") + #large,common,neg
+    geom_segment(aes(x = 101, xend = 161, 
+                     y = pos_res[[5,2]], yend = pos_res[[5,2]]), 
+                 linetype = 3, color = "black") + #large,rare,post
+    geom_segment(aes(x = 101, xend = 161, 
+                     y = neg_res[[5,2]], yend = neg_res[[5,2]]), 
+                 linetype = 3, color = "black") #large,rare,neg
 ```
-
-#Volume- Common + Small Grains- Max- Scatterplot + Regression
-```{r}
-ggplot() + 
-  xlim(0,750000) + ylim(0,750000) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
-  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
-  labs(title = "Manual 2D vs. Nano-CT 3D Volume", subtitle="Common + Small Grains, With Regression Lines (lm), Zoomed", x= "2D Volume", y= "3D Volume") + 
- scale_color_d3(palette= "category10", 
-                    name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-                   
-  geom_point(df7.small, mapping=aes(x = s.v, y = db.v, color=gc), size = 2) +
-  geom_smooth(mapping=aes(x = s.v, y = db.v, color=gc),data= df7.small, method="lm", se=FALSE) 
-
-```
-
-#Volume- Common + Large Grains- Max- Scatterplot + Regression
-```{r}
-ggplot() + 
-  xlim(0,750000) + ylim(0,750000) +
-  geom_abline(slope=1, intercept = 0) + 
-  geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
-  geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
-  geom_abline(slope=.9, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
-  geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2) + #20%
-  geom_abline(slope=.7, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
-  geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
-  geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2) + #40%
-  labs(title = "Manual 2D vs. Nano-CT 3D Volume", subtitle="Common + Large Grains, With Regression Lines (lm), Zoomed", x= "2D Volume", y= "3D Volume") + 
-  scale_color_d3(palette= "category10", 
-                    name= "Geometric Index",
-                    labels= c("A", "B", "C")) +
-                  
-  geom_point(df7.large, mapping=aes(x = s.v, y = db.v, color=gc), size = 2) +
-  geom_smooth(mapping=aes(x = s.v, y = db.v, color=gc), data=df7.large, method="lm", se=FALSE)
-```
-
-
-
 
 ############################################################################
 Manuscript Draft Figures
@@ -583,6 +413,10 @@ ggplot() +
   #theme(axis.text.x = element_text(angle = 60, vjust = 0.99, hjust=1))
 
 ```
+
+
+
+
 
 ####################################################################################
 Other/Unknown
