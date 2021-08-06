@@ -29,20 +29,18 @@ sample_df <- apatite %>%
   nest()
 ```
 
-
-
 # Nested Bootstrapped Linear Regression:
 ## Forcing the Intercept Through 0
 This code chunk creates the results (ie. mean slope, mean std.err, plot slope) & creates vectors of bootstrapped slopes for all categories
 
 ```{r}
 # Use 'map' to apply function over a list of dataframes (ie. the nested df above). 
-param <-  "volume" #MUST CHANGE THIS FOR EACH PARAMETER YOU WANT TO RUN                    #ie. "ft", "volume", "esr"
+param <-  "esr" 
+#MUST CHANGE THIS FOR EACH PARAMETER YOU WANT TO RUN #ie. "ft", "volume", "esr"
 
 results_boot <- pmap(list(sample_df[[3]], 
                            glue("{param}")), 
                      bootstrap.linreg.nest)
-
 
 # Convert the lists of lists spit out by 'map' into a dataframe that is pretty & in the correct order. 
 # Seperate slopes from other results
@@ -74,39 +72,40 @@ assign(paste("slopes_boot", glue("{param}"), sep =  "_"), slopes_boot_df)
 ```
 
 Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
-# Make sure that if you re-run any of it, it will just append the new datasheet to the end of the excel file. So if you want to make a new excel, change the file name, if you want to start over but keep the same file name, change append = TRUE to append = FALSE on the first command. *Warning: this will delete the ENTIRE file and replace it with JUST the new sheet you named*
 ```{r}
+filename <- "Regression Results_Final.xlsx"
+
 ###### Bootstrapped results,intercept fixed at zero
-xlsx::write.xlsx(as.data.frame(results_boot_ft), file="Regression Results_Final.xlsx", sheetName="results_boot_ft", append = TRUE, row.names=FALSE)
+xlsx::write.xlsx(as.data.frame(results_boot_ft), file = glue("{filename}"), sheetName="results_boot_ft", append = TRUE, row.names=FALSE)
 
-xlsx::write.xlsx(as.data.frame(results_boot_volume), file="Regression Results_Final.xlsx", sheetName="results_boot_volume", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(results_boot_volume), file = glue("{filename}"), sheetName="results_boot_volume", row.names=FALSE, append = TRUE)
 
-xlsx::write.xlsx(as.data.frame(results_boot_esr), file="Regression Results_Final.xlsx", sheetName="results_boot_esr", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(results_boot_esr), file=glue("{filename}"), sheetName="results_boot_esr", row.names=FALSE, append = TRUE)
 
 ###### Slopes, bootstrapped, intercept fixed at zero
-xlsx::write.xlsx(as.data.frame(slopes_boot_ft), file="Regression Results_Final.xlsx", sheetName="slopes_boot_ft", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(slopes_boot_ft), file=glue("{filename}"), sheetName="slopes_boot_ft", row.names=FALSE, append = TRUE)
 
-xlsx::write.xlsx(as.data.frame(slopes_boot_volume), file="Regression Results_Final.xlsx", sheetName="slopes_boot_volume", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(slopes_boot_volume), file=glue("{filename}"), sheetName="slopes_boot_volume", row.names=FALSE, append = TRUE)
 
-xlsx::write.xlsx(as.data.frame(slopes_boot_esr), file="Regression Results_Final.xlsx", sheetName="slopes_boot_esr", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(slopes_boot_esr), file=glue("{filename}"), sheetName="slopes_boot_esr", row.names=FALSE, append = TRUE)
 ```
 
 # Nested Bootstrapped Linear Regression:
 ## NOT Forcing the Intercept Through 0
-This code chunk creates the results (ie. mean slope, mean std.err, plot slope) and sreates vectors of bootstrapped intercepts for all categories
+This code chunk creates the results (ie. mean slope, mean std.err, plot slope) and creates vectors of bootstrapped intercepts for all categories
 ```{r}
-param <-  "ft" #MUST CHANGE THIS FOR EACH PARAMETER YOU WANT TO RUN                    #ie. "ft", "volume", "esr"
-tic("bootstrap not fixed")
+param <- "esr" #MUST CHANGE THIS FOR EACH PARAMETER YOU WANT TO RUN #ie. "ft", "volume", "esr"
+
 results_nf_boot <- pmap(list(sample_df[[3]], 
                           glue("{param}")), 
                      bootstrap.linreg.nest.not.fixed)
 
-toc()
 # Convert the lists of lists spit out by 'map' into a dataframe that is pretty & in the correct order. 
 # Seperate slopes from other results
 results_nf_flat <- flatten(results_nf_boot) 
-results_nf_boot <- results_nf_flat[seq(1, length(results_nf_flat), 2)]
-intercepts_boot <- results_nf_flat[seq(2, length(results_nf_flat), 2)]
+results_nf_boot <- results_nf_flat[seq(1, length(results_nf_flat), 3)]
+intercepts_boot <- results_nf_flat[seq(2, length(results_nf_flat), 3)]
+slopes_nf_boot <- results_nf_flat[seq(3, length(results_nf_flat), 3)]
   
 results_nf_boot_df <- data.frame(matrix(unlist(results_nf_boot), nrow = 11, byrow = T)) %>%
   rename(slope = X1, intercept = X2, std.err = X3, plot.slope = X4) %>%
@@ -129,38 +128,44 @@ intercepts_boot_df <- data.frame(matrix(unlist(intercepts_boot), nrow = 1001, by
 
 #Save results to named dataframe 
 assign(paste("intercepts_boot", glue("{param}"), sep =  "_"), intercepts_boot_df)
-```
 
-Create vectors of bootstrapped intercepts for all categories
-```{r}
-results_intercepts_boot <- pmap(list(sample_df[[3]], 
-                                 "esr"), 
-                            bootstrap.intercepts)
+# slopes --> tidy dataframe
+# To calculate an uncertainty on the correction, a vector of all 1001 slopes split out by the bootstrapping procedure is saved into its own file.
 
-intercepts_boot_df <- data.frame(matrix(unlist(intercepts_boot), nrow = 1001, byrow = FALSE)) %>%
+slopes_nf_boot_df <- data.frame(matrix(unlist(slopes_nf_boot), nrow = 1001, byrow = FALSE)) %>%
   rename(A1 = X1, A = X2, `1` = X3, term1 = X4, term2 = X5, A2 = X6, `2`= X7, term0 = X8, B2 = X9, B = X10, B1 = X11) %>%
   tibble() %>%
   select("A", "A1", "A2", "B", "B1", "B2", "1", "2", "term0", "term1", "term2")
+
+#Save results to named dataframe 
+assign(paste("slopes_nf_boot", glue("{param}"), sep =  "_"), slopes_nf_boot_df)
 ```
 
 Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
 ```{r}
 ##### Bootstrapped results,intercept not fixed at zero
 
-xlsx::write.xlsx(as.data.frame(results_boot_not_fixed_ft), file="Regression Results_Final.xlsx", sheetName="results_boot_not_fixed_ft", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(results_nf_boot_ft), file="Regression Results_Final.xlsx", sheetName="results_nf_boot_ft", row.names=FALSE, append = TRUE)
 
-xlsx::write.xlsx(as.data.frame(results_boot_not_fixed_volume), file="Regression Results_Final.xlsx", sheetName="results_boot_not_fixed_volume", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(results_nf_boot_volume), file="Regression Results_Final.xlsx", sheetName="results_nf_boot_volume", row.names=FALSE, append = TRUE)
 
-xlsx::write.xlsx(as.data.frame(results_boot_not_fixed_esr), file="Regression Results_Final.xlsx", sheetName="results_boot_not_fixed_esr", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(results_nf_boot_esr), file="Regression Results_Final.xlsx", sheetName="results_nf_boot_esr", row.names=FALSE, append = TRUE)
 
 ###### Intercepts, bootstrapped, intercept not fixed at zero
 
-xlsx::write.xlsx(as.data.frame(results_intercepts_boot_not_fixed_ft), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_not_fixed_ft", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(intercepts_boot_ft), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_ft", row.names=FALSE, append = TRUE)
 
-xlsx::write.xlsx(as.data.frame(results_intercepts_boot_not_fixed_volume), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_not_fixed_volume", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(intercepts_boot_volume), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_volume", row.names=FALSE, append = TRUE)
 
-xlsx::write.xlsx(as.data.frame(results_intercepts_boot_not_fixed_esr), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_not_fixed_esr", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(intercepts_boot_esr), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_esr", row.names=FALSE, append = TRUE)
 
+###### Slopes, bootstrapped, intercept not fixed at zero
+
+xlsx::write.xlsx(as.data.frame(slopes_nf_boot_ft), file="Regression Results_Final.xlsx", sheetName="slopes_nf_boot_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(slopes_nf_boot_volume), file="Regression Results_Final.xlsx", sheetName="slopes_nf_boot_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(slopes_nf_boot_esr), file="Regression Results_Final.xlsx", sheetName="slopes_nf_boot_esr", row.names=FALSE, append = TRUE)
 ```
 
 
@@ -168,57 +173,69 @@ xlsx::write.xlsx(as.data.frame(results_intercepts_boot_not_fixed_esr), file="Reg
 ## Forcing the Intercept Through 0
 This code chunk creates the results (ie. slope, sigma slope, plot slope)
 ```{r}
+param <- "esr"
+
 results_taylor <- pmap(list(sample_df[[3]], 
-                            results_boot_esr$slope, 
-                            "esr"), 
+                            glue("{param}")), 
                        taylor.uncertainty)
 
-results_taylor_esr <- data.frame(matrix(unlist(results_taylor), nrow = 11, byrow = TRUE)) %>%
+results_taylor_df <- data.frame(matrix(unlist(results_taylor), nrow = 11, byrow = TRUE)) %>%
   rename(slope = X1, sigma.slope = X2, plot.slope = X3) %>%
   bind_cols(sample_df[,2], sample_df[,1]) %>%
   relocate(grouping, name, .before = slope) %>%
   tibble() %>%
   mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "1", "2", "term0", "term1", "term2"))) %>%
   arrange(grouping)
+
+#Save results to named dataframe 
+assign(paste("results_taylor", glue("{param}"), sep =  "_"), results_taylor_df)
 ```
 
 Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
 ```{r}
+filename <- "Regression Results_Final.xlsx"
+#glue("{filename}")
 ###### Taylor results, intercept fixed at zero
 
-xlsx::write.xlsx(as.data.frame(results_taylor_ft), file="Regression Results_Final.xlsx", sheetName="results_taylor_ft", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(results_taylor_ft), file= glue("{filename}"), sheetName="results_taylor_ft", row.names=FALSE, append = TRUE)
 
-xlsx::write.xlsx(as.data.frame(results_taylor_volume), file="Regression Results_Final.xlsx", sheetName="results_taylor_volume", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(results_taylor_volume), file = glue("{filename}"), sheetName="results_taylor_volume", row.names=FALSE, append = TRUE)
 
-xlsx::write.xlsx(as.data.frame(results_taylor_esr), file="Regression Results_Final.xlsx", sheetName="results_taylor_esr", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(results_taylor_esr), file = glue("{filename}"), sheetName="results_taylor_esr", row.names=FALSE, append = TRUE)
 ```
 
 # Taylor Linear Regression:
 ## NOT Forcing the Intercept Through 0
 This code chunk creates the results (ie. slope, intercept, sigma slope, sigma intercept...)
 ```{r}
-results_taylor_not_fixed <- pmap(list(sample_df[[3]], 
-                            "esr"), 
+param <- "esr"
+results_nf_taylor <- pmap(list(sample_df[[3]], 
+                            glue("{param}")), 
                        taylor.uncertainty.not.fixed)
 
-results_taylor_not_fixed_esr <- data.frame(matrix(unlist(results_taylor_not_fixed), nrow = 11, byrow = TRUE)) %>%
+results_nf_taylor_df <- data.frame(matrix(unlist(results_nf_taylor), nrow = 11, byrow = TRUE)) %>%
   rename(slope = X1, sigma.slope = X2, intercept = X3, sigma.intercept =X4, plot.slope = X5) %>%
   bind_cols(sample_df[,2], sample_df[,1]) %>%
   relocate(grouping, name, .before = slope) %>%
   tibble() %>%
   mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "1", "2", "term0", "term1", "term2"))) %>%
   arrange(grouping)
+
+#Save results to named dataframe 
+assign(paste("results_nf_taylor", glue("{param}"), sep =  "_"), results_nf_taylor_df)
 ```
 
 Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
 ```{r}
+filename <- "Regression Results_Final.xlsx"
+#glue("{filename}")
 ###### Taylor results,intercept not fixed at zero
 
-xlsx::write.xlsx(as.data.frame(results_taylor_not_fixed_ft), file="Regression Results_Final.xlsx", sheetName="results_taylor_not_fixed_ft", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(results_nf_taylor_ft), file =  glue("{filename}"), sheetName="results_nf_taylor_ft", row.names=FALSE, append = TRUE)
 
-xlsx::write.xlsx(as.data.frame(results_taylor_not_fixed_volume), file="Regression Results_Final.xlsx", sheetName="results_taylor_not_fixed_volume", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(results_nf_taylor_volume), file =  glue("{filename}"), sheetName="results_nf_taylor_volume", row.names=FALSE, append = TRUE)
 
-xlsx::write.xlsx(as.data.frame(results_taylor_not_fixed_esr), file="Regression Results_Final.xlsx", sheetName="results_taylor_not_fixed_esr", row.names=FALSE, append = TRUE)
+xlsx::write.xlsx(as.data.frame(results_nf_taylor_esr), file = glue("{filename}"), sheetName="results_nf_taylor_esr", row.names=FALSE, append = TRUE)
 ```
 
 
@@ -226,6 +243,7 @@ xlsx::write.xlsx(as.data.frame(results_taylor_not_fixed_esr), file="Regression R
 
 
 
+Dead to me round 2:
 ################################################################################################
 
 

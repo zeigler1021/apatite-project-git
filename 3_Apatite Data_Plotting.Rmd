@@ -32,8 +32,8 @@ Exploring Ft
 apatite %>%
   #filter(gc == "B") %>%
   
-ggplot(mapping=aes(x = s.ft, y = db.ft, color= gc, key = sample, key2 = s.gem)) + 
-  geom_smooth(method= "lm", formula = y ~ 0 + x, se = F) +
+ggplot(mapping=aes(x = s.ft, y = db.ft, color= gc)) + 
+  geom_smooth(method= "lm", formula = y ~ 0 + x) +
   geom_point(size = 2) +
   
   labs(title = "Manual 2D vs. Nano-CT 3D Ft", x= "2D Ft", y= "3D Ft") + 

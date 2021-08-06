@@ -136,9 +136,9 @@ b2 <- apatite %>% filter(gem == "B2")
 # c3 <- apatite %>% filter(s.gem == "C3")
 
 #Make dataframes based on terminations 
-term0 <- apatite %>% filter(np == "0")
-term1 <- apatite %>% filter(np == "1")
-term2 <- apatite %>% filter(np == "2")
+term0 <- apatite %>% filter(np == "term0")
+term1 <- apatite %>% filter(np == "term1")
+term2 <- apatite %>% filter(np == "term2")
 ```
 
 #Load functions
@@ -149,7 +149,7 @@ source("function_error_propagation.R")
 #source("function_bootstrapped_slopes.R")
 #source("function_linreg_slope_uncertainty.R")
 source("function_model_diagnostics.R")
-source("function_ttest_compare.R")
+#source("function_ttest_compare.R")
 source("function_bootstrap_linreg_nested.R")
 source("function_taylor_uncertainties_nested.R")
 source("function_taylor_uncertainties_nested_notfixed.R")
@@ -158,8 +158,8 @@ source("function_bootstrap_linreg_nested_notfixed.R")
 
 Plotting functions
 ```{r}
-source("function_error_lines.R")
-source("function_plot_results.R")
+#source("function_error_lines.R")
+#source("function_plot_results.R")
 ```
 
 
