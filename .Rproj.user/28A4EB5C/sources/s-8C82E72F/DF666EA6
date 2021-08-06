@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1628270659386.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "DF666EA6",
+    "lastKnownWriteTime" : 1628212279,
+    "last_content_update" : 1628270793498,
+    "path" : "~/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/apatite-project-git/function_bootstrap_linreg_nested.R",
+    "project_path" : "function_bootstrap_linreg_nested.R",
+    "properties" : {
+        "cursorPosition" : "55,0",
+        "scrollLine" : "36",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

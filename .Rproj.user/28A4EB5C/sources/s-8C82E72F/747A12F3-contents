@@ -17,11 +17,11 @@ editor_options:
 
 #Setup
 ```{r setup, include=FALSE}
-
 #for stats
 library(MASS) 
 library(performance) #check model
 library(tidymodels)
+library(tictoc) #check how long model takes to run
 
 #tidyverse
 library(tidyverse) #purr, dplyr, tidyr, readr, readxl, tibble, stringr, forcats, ggplot2
@@ -64,16 +64,11 @@ cb <- c("#595959", "#5f9ed1", "#c85200")
 cb2 <- c("#f06400", "#949494", "#008CF0")
 ```
 
-
-#Import Data
-
+# Import Data
 Import master datasheet
 ```{r}
-apatite <- read_excel("./Data Comps_v7.xlsx", sheet="Data Comps") 
+apatite <- read_excel("./Data Comps_Final.xlsx", sheet="Data Comps") 
 as_tibble(apatite)
-
-apatite <- apatite %>%
-  filter(!is.na(apatite$empty)) #this gets rid of data points that are missing information
 ```
 
 #Create volume (mm) and (Rs)
@@ -92,17 +87,16 @@ Setting cols as factor for plotting
 ```{r}
 apatite$size.bin <- factor(apatite$size.bin, levels = c("40-50", "51-60", "61-70", "71-80", "81-90", "91-100", "101-110", "111-120", "121-130", "131-140", "141-150", "151-160", "161-170"))
 
-apatite$s.gem <- factor(apatite$s.gem, levels = c("A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3"))
+apatite$gem <- factor(apatite$gem, levels = c("A1", "A2", "B1", "B2"))
 
-apatite$ri <- factor(apatite$ri, levels = c("1", "2", "3"))
+apatite$gc <- factor(apatite$gc, levels = c("A", "B"))
+apatite$ri <- factor(apatite$ri, levels = c("1", "2"))
 
 apatite$size.name <- factor(apatite$size.name, levels=c("Small & Rare","Small & Common","Typical & Common", "Large & Common", "Large & Rare"))
 
-#apatite$size.cat <- factor(apatite$size.cat, levels = c("AB", "C"))
+apatite$size.cat <- factor(apatite$size.cat, levels = c("rare- small", "common",  "rare- large"))
 
-apatite$gem.cat <- factor(apatite$gem.cat, levels = c("Best.GEM", "Average.GEM", "Worst.GEM"))
-
-apatite$np <- factor(apatite$np, levels= c("0", "1", "2"))
+apatite$np <- factor(apatite$np, levels= c("term0", "term1", "term2"))
 ```
 
 Import Linear Regression Data
@@ -113,53 +107,38 @@ Import Linear Regression Data
 Making dataframe of 'common only' apatite
 ```{r}
 #Grains Removed
-common_apatite <- apatite %>%
-  filter(!size.name == "Large & Rare", !size.name == "Small & Rare")
+#common_apatite <- apatite %>%
+  #filter(!size.name == "Large & Rare", !size.name == "Small & Rare")
 ```
 
 Making parameter based dataframes
 ```{r}
 #Dataframe by Roughness Index 
-ri1 <- common_apatite %>% filter(ri=="1")
-ri2 <- common_apatite %>% filter(ri=="2")
-ri3 <- common_apatite %>% filter(ri=="3")
+ri1 <- apatite %>% filter(ri=="1")
+ri2 <- apatite %>% filter(ri=="2")
+#ri3 <- apatite %>% filter(ri=="3")
 
 #Dataframe by Geometric Classification
-b <- common_apatite %>% filter(gc=="A") 
-a <- common_apatite %>% filter(gc=="B") 
-c <- common_apatite %>% filter(gc=="C") 
-ab <- common_apatite %>% filter(gc == "A" | gc == "B") %>% mutate(s.gem= "AB")
+a <- apatite %>% filter(gc=="A") 
+b <- apatite %>% filter(gc=="B") 
+#c <- apatite %>% filter(gc=="C") 
+#ab <- apatite %>% filter(gc == "A" | gc == "B") %>% mutate(s.gem= "AB")
 
 #Create Dataframes split by both geometry and roughness 
-a1 <- common_apatite %>% filter(s.gem == "A1") 
-a2 <- common_apatite %>% filter(s.gem == "A2")
-a3 <- common_apatite %>% filter(s.gem == "A3")
-b1 <- common_apatite %>% filter(s.gem == "B1") 
-b2 <- common_apatite %>% filter(s.gem == "B2")
-b3 <- common_apatite %>% filter(s.gem == "B3")
-c1 <- common_apatite %>% filter(s.gem == "C1") 
-c2 <- common_apatite %>% filter(s.gem == "C2")
-c3 <- common_apatite %>% filter(s.gem == "C3")
+a1 <- apatite %>% filter(gem == "A1") 
+a2 <- apatite %>% filter(gem == "A2")
+# a3 <- apatite %>% filter(s.gem == "A3")
+b1 <- apatite %>% filter(gem == "B1") 
+b2 <- apatite %>% filter(gem == "B2")
+# b3 <- apatite %>% filter(s.gem == "B3")
+# c1 <- apatite %>% filter(s.gem == "C1") 
+# c2 <- apatite %>% filter(s.gem == "C2")
+# c3 <- apatite %>% filter(s.gem == "C3")
 
 #Make dataframes based on terminations 
-term0 <- common_apatite %>% filter(np == "0")
-term1 <- common_apatite %>% filter(np == "1")
-term2 <- common_apatite %>% filter(np =="2")
-```
-
-
-```{r}
-a_all <- apatite %>%
-  filter(gc == "A")
-  
-b_all <-apatite %>%
-  filter(gc == "B")
-
-ab_all <- apatite %>%
-  filter(gem.geo == "AB")
-
-c_all <- apatite %>%
-  filter(gem.geo == "C")
+term0 <- apatite %>% filter(np == "0")
+term1 <- apatite %>% filter(np == "1")
+term2 <- apatite %>% filter(np == "2")
 ```
 
 #Load functions
@@ -167,10 +146,14 @@ c_all <- apatite %>%
 Statistics functions
 ```{r}
 source("function_error_propagation.R")
-source("function_bootstrapped_slopes.R")
-source("function_linreg_slope_uncertainty.R")
+#source("function_bootstrapped_slopes.R")
+#source("function_linreg_slope_uncertainty.R")
 source("function_model_diagnostics.R")
 source("function_ttest_compare.R")
+source("function_bootstrap_linreg_nested.R")
+source("function_taylor_uncertainties_nested.R")
+source("function_taylor_uncertainties_nested_notfixed.R")
+source("function_bootstrap_linreg_nested_notfixed.R")
 ```
 
 Plotting functions

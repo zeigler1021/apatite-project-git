@@ -7,6 +7,228 @@ editor_options:
   chunk_output_type: console
 ---
 
+Notes for Zach on uncertainty shit:
+```{r}
+pvalue <- sum(b_slopes_volume >= c_slopes_volume)/1000
+sum(pvalue)
+#The issue with this is that direction matter. (ie. if I put c first or a first). Also, I'm not sure what it means to get a p value of '0'-- just means significently different? But then if I switch the order I get a p value grater than 1. What?
+abs(a_slopes_ft - b_slopes_ft)
+abs(a_slopes_ft - c_slopes_ft)
+
+#make 0 my test stat. subtract slopes and see if they are within 0 or not. try a confidence interval, maybe? (does the CI include 0 or not?). or just use a logical vector and count number of T/F and get a p value. check if answers are the same if you take the abs of the difference because otherwise the order depends. Or ask Zach? idk bitch. but i think zero should be the test stat. 
+
+```
+
+# Nested Dataframe REQUIRED for all linear regressions below: 
+```{r}
+# Created nested dataframe. Can add parameters here, just change the "11" in "nrow" when compiling results into a dataframe. 
+sample_df <- apatite %>%
+  select(gem, gc, ri, np, db.ft, s.ft, db.v, s.v, s.esr.ft, db.esr.ft) %>%
+  pivot_longer(1:4, values_to = "grouping")%>%
+  group_by(name, grouping) %>%
+  nest()
+```
+
+
+
+# Nested Bootstrapped Linear Regression:
+## Forcing the Intercept Through 0
+This code chunk creates the results (ie. mean slope, mean std.err, plot slope) & creates vectors of bootstrapped slopes for all categories
+
+```{r}
+# Use 'map' to apply function over a list of dataframes (ie. the nested df above). 
+param <-  "volume" #MUST CHANGE THIS FOR EACH PARAMETER YOU WANT TO RUN                    #ie. "ft", "volume", "esr"
+
+results_boot <- pmap(list(sample_df[[3]], 
+                           glue("{param}")), 
+                     bootstrap.linreg.nest)
+
+
+# Convert the lists of lists spit out by 'map' into a dataframe that is pretty & in the correct order. 
+# Seperate slopes from other results
+results_flat <- flatten(results_boot) 
+results_boot <- results_flat[seq(1, length(results_flat), 2)]
+slopes_boot <- results_flat[seq(2, length(results_flat), 2)]
+
+# results --> tidy dataframe
+results_boot_df <- data.frame(matrix(unlist(results_boot), nrow = 11, byrow = T)) %>%
+  rename(slope = X1, std.err = X2, plot.slope = X3) %>%
+  bind_cols(sample_df[,2]) %>%
+  relocate(grouping, .before = slope) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "1", "2", "term0", "term1", "term2"))) %>%
+  arrange(grouping)
+
+#Save results to named dataframe 
+assign(paste("results_boot", glue("{param}"), sep =  "_"), results_boot_df)
+
+# slopes --> tidy dataframe
+# To calculate an uncertainty on the correction, a vector of all 1001 slopes split out by the bootstrapping procedure is saved into its own file.
+slopes_boot_df <- data.frame(matrix(unlist(slopes_boot), nrow = 1001, byrow = FALSE)) %>%
+  rename(A1 = X1, A = X2, `1` = X3, term1 = X4, term2 = X5, A2 = X6, `2`= X7, term0 = X8, B2 = X9, B = X10, B1 = X11) %>%
+  tibble() %>%
+  select("A", "A1", "A2", "B", "B1", "B2", "1", "2", "term0", "term1", "term2")
+
+#Save results to named dataframe 
+assign(paste("slopes_boot", glue("{param}"), sep =  "_"), slopes_boot_df)
+```
+
+Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
+# Make sure that if you re-run any of it, it will just append the new datasheet to the end of the excel file. So if you want to make a new excel, change the file name, if you want to start over but keep the same file name, change append = TRUE to append = FALSE on the first command. *Warning: this will delete the ENTIRE file and replace it with JUST the new sheet you named*
+```{r}
+###### Bootstrapped results,intercept fixed at zero
+xlsx::write.xlsx(as.data.frame(results_boot_ft), file="Regression Results_Final.xlsx", sheetName="results_boot_ft", append = TRUE, row.names=FALSE)
+
+xlsx::write.xlsx(as.data.frame(results_boot_volume), file="Regression Results_Final.xlsx", sheetName="results_boot_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_boot_esr), file="Regression Results_Final.xlsx", sheetName="results_boot_esr", row.names=FALSE, append = TRUE)
+
+###### Slopes, bootstrapped, intercept fixed at zero
+xlsx::write.xlsx(as.data.frame(slopes_boot_ft), file="Regression Results_Final.xlsx", sheetName="slopes_boot_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(slopes_boot_volume), file="Regression Results_Final.xlsx", sheetName="slopes_boot_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(slopes_boot_esr), file="Regression Results_Final.xlsx", sheetName="slopes_boot_esr", row.names=FALSE, append = TRUE)
+```
+
+# Nested Bootstrapped Linear Regression:
+## NOT Forcing the Intercept Through 0
+This code chunk creates the results (ie. mean slope, mean std.err, plot slope) and sreates vectors of bootstrapped intercepts for all categories
+```{r}
+param <-  "ft" #MUST CHANGE THIS FOR EACH PARAMETER YOU WANT TO RUN                    #ie. "ft", "volume", "esr"
+tic("bootstrap not fixed")
+results_nf_boot <- pmap(list(sample_df[[3]], 
+                          glue("{param}")), 
+                     bootstrap.linreg.nest.not.fixed)
+
+toc()
+# Convert the lists of lists spit out by 'map' into a dataframe that is pretty & in the correct order. 
+# Seperate slopes from other results
+results_nf_flat <- flatten(results_nf_boot) 
+results_nf_boot <- results_nf_flat[seq(1, length(results_nf_flat), 2)]
+intercepts_boot <- results_nf_flat[seq(2, length(results_nf_flat), 2)]
+  
+results_nf_boot_df <- data.frame(matrix(unlist(results_nf_boot), nrow = 11, byrow = T)) %>%
+  rename(slope = X1, intercept = X2, std.err = X3, plot.slope = X4) %>%
+  bind_cols(sample_df[,2]) %>%
+  relocate(grouping, .before = slope) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "1", "2", "term0", "term1", "term2"))) %>%
+  arrange(grouping)
+
+#Save results to named dataframe 
+assign(paste("results_nf_boot", glue("{param}"), sep =  "_"), results_nf_boot_df)
+
+# intercepts --> tidy dataframe
+# To calculate an uncertainty on the correction, a vector of all 1001 intercepts split out by the bootstrapping procedure is saved into its own file.
+
+intercepts_boot_df <- data.frame(matrix(unlist(intercepts_boot), nrow = 1001, byrow = FALSE)) %>%
+  rename(A1 = X1, A = X2, `1` = X3, term1 = X4, term2 = X5, A2 = X6, `2`= X7, term0 = X8, B2 = X9, B = X10, B1 = X11) %>%
+  tibble() %>%
+  select("A", "A1", "A2", "B", "B1", "B2", "1", "2", "term0", "term1", "term2")
+
+#Save results to named dataframe 
+assign(paste("intercepts_boot", glue("{param}"), sep =  "_"), intercepts_boot_df)
+```
+
+Create vectors of bootstrapped intercepts for all categories
+```{r}
+results_intercepts_boot <- pmap(list(sample_df[[3]], 
+                                 "esr"), 
+                            bootstrap.intercepts)
+
+intercepts_boot_df <- data.frame(matrix(unlist(intercepts_boot), nrow = 1001, byrow = FALSE)) %>%
+  rename(A1 = X1, A = X2, `1` = X3, term1 = X4, term2 = X5, A2 = X6, `2`= X7, term0 = X8, B2 = X9, B = X10, B1 = X11) %>%
+  tibble() %>%
+  select("A", "A1", "A2", "B", "B1", "B2", "1", "2", "term0", "term1", "term2")
+```
+
+Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
+```{r}
+##### Bootstrapped results,intercept not fixed at zero
+
+xlsx::write.xlsx(as.data.frame(results_boot_not_fixed_ft), file="Regression Results_Final.xlsx", sheetName="results_boot_not_fixed_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_boot_not_fixed_volume), file="Regression Results_Final.xlsx", sheetName="results_boot_not_fixed_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_boot_not_fixed_esr), file="Regression Results_Final.xlsx", sheetName="results_boot_not_fixed_esr", row.names=FALSE, append = TRUE)
+
+###### Intercepts, bootstrapped, intercept not fixed at zero
+
+xlsx::write.xlsx(as.data.frame(results_intercepts_boot_not_fixed_ft), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_not_fixed_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_intercepts_boot_not_fixed_volume), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_not_fixed_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_intercepts_boot_not_fixed_esr), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_not_fixed_esr", row.names=FALSE, append = TRUE)
+
+```
+
+
+# Taylor Linear Regression:
+## Forcing the Intercept Through 0
+This code chunk creates the results (ie. slope, sigma slope, plot slope)
+```{r}
+results_taylor <- pmap(list(sample_df[[3]], 
+                            results_boot_esr$slope, 
+                            "esr"), 
+                       taylor.uncertainty)
+
+results_taylor_esr <- data.frame(matrix(unlist(results_taylor), nrow = 11, byrow = TRUE)) %>%
+  rename(slope = X1, sigma.slope = X2, plot.slope = X3) %>%
+  bind_cols(sample_df[,2], sample_df[,1]) %>%
+  relocate(grouping, name, .before = slope) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "1", "2", "term0", "term1", "term2"))) %>%
+  arrange(grouping)
+```
+
+Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
+```{r}
+###### Taylor results, intercept fixed at zero
+
+xlsx::write.xlsx(as.data.frame(results_taylor_ft), file="Regression Results_Final.xlsx", sheetName="results_taylor_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_taylor_volume), file="Regression Results_Final.xlsx", sheetName="results_taylor_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_taylor_esr), file="Regression Results_Final.xlsx", sheetName="results_taylor_esr", row.names=FALSE, append = TRUE)
+```
+
+# Taylor Linear Regression:
+## NOT Forcing the Intercept Through 0
+This code chunk creates the results (ie. slope, intercept, sigma slope, sigma intercept...)
+```{r}
+results_taylor_not_fixed <- pmap(list(sample_df[[3]], 
+                            "esr"), 
+                       taylor.uncertainty.not.fixed)
+
+results_taylor_not_fixed_esr <- data.frame(matrix(unlist(results_taylor_not_fixed), nrow = 11, byrow = TRUE)) %>%
+  rename(slope = X1, sigma.slope = X2, intercept = X3, sigma.intercept =X4, plot.slope = X5) %>%
+  bind_cols(sample_df[,2], sample_df[,1]) %>%
+  relocate(grouping, name, .before = slope) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "1", "2", "term0", "term1", "term2"))) %>%
+  arrange(grouping)
+```
+
+Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
+```{r}
+###### Taylor results,intercept not fixed at zero
+
+xlsx::write.xlsx(as.data.frame(results_taylor_not_fixed_ft), file="Regression Results_Final.xlsx", sheetName="results_taylor_not_fixed_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_taylor_not_fixed_volume), file="Regression Results_Final.xlsx", sheetName="results_taylor_not_fixed_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_taylor_not_fixed_esr), file="Regression Results_Final.xlsx", sheetName="results_taylor_not_fixed_esr", row.names=FALSE, append = TRUE)
+```
+
+
+
+
+
+
+################################################################################################
+
+
 #Uncertainty Calculations
 ```{r}
 apatite <- apatite %>%
@@ -52,27 +274,6 @@ for (i in 1:nrow(df)) {
 }
 ```
 
-
-```{r}
-#need to combine ri 1/2
-x  <- ab_all_residuals_ft
-median_boot_res <- rowMeans(x)
-
-y <- ab_all
-db <- y %>% select(sample, db.ft, db.v,db.esr.ft) 
-
-percent.diff <- (x/y$db.ft)*100
-
-sd(percent.diff)
-```
-
-
-
-```{r}
-set.seed(123)
-bootstrap.linreg(c, "volume", "c")
-```
-
 Creating uncertainty dataframes: 
 ### Only bit that needs to change is x, z, y. Need to change this before plotting.
 ```{r}
@@ -110,10 +311,6 @@ res_results <- res_plotting %>%
   pivot_wider(values_from = 3:4, names_from = sign)
 ```
 
-## Double filter 
-```{r}
-slope.uncertainty(c, "ft")
-```
 
 # t-test to assess if slopes are statistically the same or not
 ```{r}
@@ -358,9 +555,6 @@ ggplot() +
 
 ```
 
-
-
-
 ##Resources:
 
 * [Bootstrapping Code](https://towardsdatascience.com/bootstrap-sampling-in-r-a7bc9d3ca14a)
@@ -368,13 +562,12 @@ ggplot() +
 * [Overlapping Confidence Intervals](https://towardsdatascience.com/tutorial-for-using-confidence-intervals-bootstrapping-860ba716aef3)
 
 
-
-
-##DEAD TO MEEEE
+### Taylor Method
 
 #Quadrature
 ```{r}
 slope.uncertainty(c, "volume")
+
 #read in spreadsheet of linear regression values
 quad <- read_excel("./Linear Reg Results.xlsx", sheet="comp")
 

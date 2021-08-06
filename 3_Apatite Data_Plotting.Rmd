@@ -29,15 +29,17 @@ colorspace::swatchplot(cb3)
 
 Exploring Ft
 ```{r}
-p <- apatite %>%
-  filter(gc == "B") %>%
+apatite %>%
+  #filter(gc == "B") %>%
   
 ggplot(mapping=aes(x = s.ft, y = db.ft, color= gc, key = sample, key2 = s.gem)) + 
   geom_smooth(method= "lm", formula = y ~ 0 + x, se = F) +
   geom_point(size = 2) +
   
   labs(title = "Manual 2D vs. Nano-CT 3D Ft", x= "2D Ft", y= "3D Ft") + 
-  scale_color_tableau(palette = "Color Blind") +
+  scale_color_tableau(palette = "Color Blind",
+                      labels = c("A", "B", "C"),
+                      ) +
                       
   geom_abline(slope=1, intercept = 0) + 
   geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
@@ -47,7 +49,7 @@ ggplot(mapping=aes(x = s.ft, y = db.ft, color= gc, key = sample, key2 = s.gem)) 
   geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
   geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
 
-ggplotly(p,  tooltip = c("key", "key2"))
+#ggplotly(p,  tooltip = c("key", "key2"))
 ```
 
 Exploring Volume

@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1628273086076.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "47400C8C",
+    "lastKnownWriteTime" : 1628272985,
+    "last_content_update" : 1628273086076,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "id" : "d71628334a7843ae83179b78bf8ab05c",
+        "name" : "results_nf_boot",
+        "title" : "results_nf_boot"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "object_explorer"
+}
