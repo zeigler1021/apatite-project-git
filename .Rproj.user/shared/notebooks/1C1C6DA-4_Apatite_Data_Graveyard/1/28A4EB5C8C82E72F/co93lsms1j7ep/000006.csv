@@ -1,0 +1,9 @@
+"0","sample_df_nested <- apatite %>% 
+      select(sample, s.gem, s.ft,  db.ft) %>% 
+      rename(twoD = s.ft,  threeD = db.ft) %>%
+      nest(data= -gem)
+"
+"2","Error: Can't subset columns that don't exist.
+[31mx[39m Column `s.gem` doesn't exist.
+[90mRun `rlang::last_error()` to see where the error occurred.[39m
+"
