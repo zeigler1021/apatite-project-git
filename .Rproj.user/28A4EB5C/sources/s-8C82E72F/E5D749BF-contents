@@ -239,6 +239,17 @@ xlsx::write.xlsx(as.data.frame(results_nf_taylor_esr), file = glue("{filename}")
 ```
 
 
+Eventually, the code to compare Taylor results easily to see if they overlap within 1sigma will exist: 
+```{r}
+
+
+```
+
+Eventually, the code to compare Bootstrapped results easily to see if  they are statisically different or not will exist: 
+```{r}
+
+
+```
 
 
 

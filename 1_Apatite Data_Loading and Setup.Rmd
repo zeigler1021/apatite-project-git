@@ -99,9 +99,12 @@ apatite$size.cat <- factor(apatite$size.cat, levels = c("rare- small", "common",
 apatite$np <- factor(apatite$np, levels= c("term0", "term1", "term2"))
 ```
 
-Import Linear Regression Data
+Import Linear Regression Data-- UPDATE with function     
 ```{r}
 #quad <- read_excel("./Linear Reg Results.xlsx", sheet="comp")
+
+#https://rpubs.com/tf_peterson/readxl_import
+
 ```
 
 Making dataframe of 'common only' apatite
@@ -145,15 +148,15 @@ term2 <- apatite %>% filter(np == "term2")
 
 Statistics functions
 ```{r}
-source("function_error_propagation.R")
+source("./Functions/function_error_propagation.R")
 #source("function_bootstrapped_slopes.R")
 #source("function_linreg_slope_uncertainty.R")
-source("function_model_diagnostics.R")
+source("./Functions/function_model_diagnostics.R")
 #source("function_ttest_compare.R")
-source("function_bootstrap_linreg_nested.R")
-source("function_taylor_uncertainties_nested.R")
-source("function_taylor_uncertainties_nested_notfixed.R")
-source("function_bootstrap_linreg_nested_notfixed.R")
+source("./Functions/function_bootstrap_linreg_nested.R")
+source("./Functions/function_taylor_uncertainties_nested.R")
+source("./Functions/function_taylor_uncertainties_nested_notfixed.R")
+source("./Functions/function_bootstrap_linreg_nested_notfixed.R")
 ```
 
 Plotting functions
