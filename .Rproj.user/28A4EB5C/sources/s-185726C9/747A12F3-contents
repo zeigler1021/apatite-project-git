@@ -66,6 +66,8 @@ theme_update(plot.subtitle= element_text(hjust = 0.5)) #adjusts subtitle so they
 qual_color_random <- c("#322288", "#aa4499", "#44aa99", "#671000", "#989934", "#6599cc", "#aa4466", "#ddcc77", "#000000")
 cb <- c("#595959", "#5f9ed1", "#c85200")
 cb2 <- c("#f06400", "#949494", "#008CF0")
+tf_color <- c("#ed6a5e", "#9ebc9e", "#553e4e")
+
 ```
 
 # Import Data
@@ -101,6 +103,9 @@ apatite$size.name <- factor(apatite$size.name, levels=c("Small & Rare","Small & 
 apatite$size.cat <- factor(apatite$size.cat, levels = c("rare- small", "common",  "rare- large"))
 
 apatite$np <- factor(apatite$np, levels= c("term0", "term1", "term2"))
+
+groupings <- as.vector(c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"), mode = "character")
+
 ```
 
 Import Linear Regression Data

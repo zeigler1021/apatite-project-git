@@ -2278,29 +2278,18 @@ stats.df.v&lt;- as.data.frame(t(as.matrix(stats.df.v)))</code></pre>
 <p>Nested equivilent of tidymodels bootstrap</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2FtcGxlX2RmX25lc3RlZCA8LSBjb21tb25fYXBhdGl0ZSAlPiUgXG4gICAgICBzZWxlY3Qoc2FtcGxlLCBzLmdlbSwgcy5mdCwgIGRiLmZ0KSAlPiUgXG4gICAgICByZW5hbWUodHdvRCA9IHMuZnQsICB0aHJlZUQgPSBkYi5mdCkgJT4lXG4gICAgICBuZXN0KGRhdGE9IC1zLmdlbSlcbiAgXG4gIHNldC5zZWVkKDEyMylcbiAgI1BlcmZvcm0gYm9vdHN0cmFwIFxuICBuZXN0ZWRfYm9vdCA8LSBib290c3RyYXBzKHNhbXBsZV9kZl9uZXN0ZWQsXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgdGltZXMgPSAxMDAwLFxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIGFwcGFyZW50ID0gVFJVRSlcbiAgbmVzdGVkX3NwbGl0IDwtIG5lc3RlZF9ib290JHNwbGl0c1xuICBcbiAgI1J1biBsaW5lYXIgcmVncmVzc2lvbiBvbiBlYWNoIGJvb3RzdHJhcFxuICBmb3IgKGkgaW4gMToxMDAxKSB7clxuICAgIHNhbXBsZV9tb2RlbHNfbmVzdGVkIDwtIG1hcChuZXN0ZWRfc3BsaXRbW2ldXSRkYXRhW1syXV0sIH4gbG0odHdvRCB+IDAgKyB0aHJlZUQsIGRhdGEgPSAuKSlcbiAgfVxuXG4jR2V0IGNvZWZmaWNpZW50c1xuc2FtcGxlX2NvZWZzX25lc3RlZCA8LSBtYXAoc2FtcGxlX21vZGVsc19uZXN0ZWQsIH4gdGlkeSgueCkpXG5zYW1wbGVfY29lZnNfbmVzdGVkIDwtIGRvLmNhbGwocmJpbmQuZGF0YS5mcmFtZSwgc2FtcGxlX2NvZWZzX25lc3RlZClcbnNhbXBsZV9jb2Vmc19uZXN0ZWQgPC0gY2JpbmQoYyhcIkExXCIsIFwiQTJcIiwgXCJBM1wiLCBcIkIxXCIsIFwiQjJcIiwgXCJCM1wiLCBcIkMxXCIsIFwiQzJcIiwgXCJDM1wiKSwgc2FtcGxlX2NvZWZzX25lc3RlZCklPiUgcmVuYW1lKGdlbSA9ICAnYyhcIkExXCIsIFwiQTJcIiwgXCJBM1wiLCBcIkIxXCIsIFwiQjJcIiwgXCJCM1wiLCBcIkMxXCIsIFwiQzJcIiwgXCJDM1wiKScpXG5gYGAifQ== -->
-<pre class="r"><code>sample_df_nested &lt;- common_apatite %&gt;% 
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2FtcGxlX2RmX25lc3RlZCA8LSBhcGF0aXRlICU+JSBcbiAgICAgIHNlbGVjdChzYW1wbGUsIHMuZ2VtLCBzLmZ0LCAgZGIuZnQpICU+JSBcbiAgICAgIHJlbmFtZSh0d29EID0gcy5mdCwgIHRocmVlRCA9IGRiLmZ0KSAlPiVcbiAgICAgIG5lc3QoZGF0YT0gLWdlbSlcblxuYGBgIn0= -->
+<pre class="r"><code>sample_df_nested &lt;- apatite %&gt;% 
       select(sample, s.gem, s.ft,  db.ft) %&gt;% 
       rename(twoD = s.ft,  threeD = db.ft) %&gt;%
-      nest(data= -s.gem)
-  
-  set.seed(123)
-  #Perform bootstrap 
-  nested_boot &lt;- bootstraps(sample_df_nested,
-                            times = 1000,
-                            apparent = TRUE)
-  nested_split &lt;- nested_boot$splits
-  
-  #Run linear regression on each bootstrap
-  for (i in 1:1001) {r
-    sample_models_nested &lt;- map(nested_split[[i]]$data[[2]], ~ lm(twoD ~ 0 + threeD, data = .))
-  }
-
-#Get coefficients
-sample_coefs_nested &lt;- map(sample_models_nested, ~ tidy(.x))
-sample_coefs_nested &lt;- do.call(rbind.data.frame, sample_coefs_nested)
-sample_coefs_nested &lt;- cbind(c(&quot;A1&quot;, &quot;A2&quot;, &quot;A3&quot;, &quot;B1&quot;, &quot;B2&quot;, &quot;B3&quot;, &quot;C1&quot;, &quot;C2&quot;, &quot;C3&quot;), sample_coefs_nested)%&gt;% rename(gem =  &#39;c(&quot;A1&quot;, &quot;A2&quot;, &quot;A3&quot;, &quot;B1&quot;, &quot;B2&quot;, &quot;B3&quot;, &quot;C1&quot;, &quot;C2&quot;, &quot;C3&quot;)&#39;)</code></pre>
+      nest(data= -gem)
+</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3I6IENhbid0IHN1YnNldCBjb2x1bW5zIHRoYXQgZG9uJ3QgZXhpc3QuXG5cdTAwMWJbMzFteFx1MDAxYlszOW0gQ29sdW1uIGBzLmdlbWAgZG9lc24ndCBleGlzdC5cblx1MDAxYls5MG1SdW4gYHJsYW5nOjpsYXN0X2Vycm9yKClgIHRvIHNlZSB3aGVyZSB0aGUgZXJyb3Igb2NjdXJyZWQuXHUwMDFiWzM5bVxuIn0= -->
+<pre><code>Error: Can&#39;t subset columns that don&#39;t exist.
+[31mx[39m Column `s.gem` doesn&#39;t exist.
+[90mRun `rlang::last_error()` to see where the error occurred.[39m</code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>Unnested equivilent of tidymodels bootstrap– to play around with.</p>
