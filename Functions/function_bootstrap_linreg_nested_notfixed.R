@@ -19,7 +19,7 @@ bootstrap.linreg.nest.not.fixed <- function (x, param) {
       unnest(coef_inf)
     
     #Get confidence interval 
-    #percentile_intervals <- int_pctl(sample_models,coef_inf)
+    percentile_intervals <- int_pctl(sample_models,coef_inf)
     #Retrieve intercepts and means
     intercept_coefs <- sample_coefs %>% select(term, estimate) %>% filter(term == "(Intercept)")
     slope_coefs <- sample_coefs %>% select(term, estimate) %>% filter(term == "db.ft")
@@ -64,10 +64,12 @@ bootstrap.linreg.nest.not.fixed <- function (x, param) {
   intercept <- mean(intercept_coefs$estimate)
   std.err <- mean(sample_coefs$std.error)
   plot.slope <- 1/(mean(slope_coefs$estimate))
+  lower.conf.intercept <- percentile_intervals[1,2]
+  upper.conf.intercept <- percentile_intervals[1,4]
   
   intercept_boot <- sample_coefs %>% select(term, estimate) %>% filter(term == "(Intercept)") %>% select(estimate)
   slope_boot <- slope_coefs %>% select(estimate)
-  results_boot <- as.data.frame(cbind(slope, intercept, std.err, plot.slope))
+  results_boot <- as.data.frame(cbind(slope, intercept, std.err, plot.slope, lower.conf.intercept, upper.conf.intercept))
   
   results_boot_list <- list(results_boot, intercept_boot, slope_boot)
   return(results_boot_list)
