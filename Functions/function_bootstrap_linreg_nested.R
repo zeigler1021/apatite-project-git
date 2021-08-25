@@ -36,6 +36,9 @@ if (param == "esr") {
   #Get confidence interval 
   #percentile_intervals <- int_pctl(sample_models,coef_inf)
   
+  #GET RESIDUALS
+  residuals_og <- unname(sample_coefs[[3]][[1001]]$residuals)
+  
   
   #Store results
   slope <-  mean(sample_coefs$estimate)
@@ -44,7 +47,7 @@ if (param == "esr") {
   slopes_boot <- sample_coefs$estimate
   results_boot <- as.data.frame(cbind(slope, std.err, plot.slope))
   
-  results_boot_list <- list(results_boot, slopes_boot)
+  results_boot_list <- list(results_boot, slopes_boot, residuals_og)
   return(results_boot_list)
   
   
