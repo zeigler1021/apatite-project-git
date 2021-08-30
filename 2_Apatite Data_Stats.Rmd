@@ -7,14 +7,70 @@ editor_options:
   chunk_output_type: console
 ---
 
+Double checking that these results don't overlap within 90% confidence:
+```{r}
+bootstrap.linreg(hex, "ft", df_name = "hex")
+bootstrap.linreg(ellip , "ft", df_name = "ellip") 
+
+pvalue <- sum(hex_slopes_volume < ellip_slopes_volume)/1001 
+pvalue <- sum(hex_1_slopes_ft < hex_2_slopes_ft)/1001 
+```
+
+
+Calculating results according to termination:
+```{r}
+## Ft
+bootstrap.linreg((hex %>% filter(np == "term0")), "ft", df_name = "hex_0")
+
+names <- c("hex_0_results_ft", "hex_1_results_ft", "hex_2_results_ft", "hex_12_results_ft", "ellip_results_ft")
+ft_results <- bind_rows(hex_0_results_ft, hex_1_results_ft, hex_2_results_ft, hex_12_results_ft, ellip_results_ft)
+ft_results <- cbind(names, ft_results)
+
+## Volume
+
+bootstrap.linreg((hex %>% filter(np == "term0")), "volume", df_name = "hex_0")
+
+
+names <- c("hex_0_results_volume", "hex_1_results_volume", "hex_2_results_volume", "hex_12_results_volume", "ellip_results_volume")
+volume_results <- bind_rows(hex_0_results_volume, hex_1_results_volume, hex_2_results_volume, hex_12_results_volume, ellip_results_volume)
+volume_results <- cbind(names, volume_results)
+```
+
+Double checking that these results don't overlap within 90% confidence:
+```{r}
+pvalue <- sum(hex_2_slopes_ft > hex_1_slopes_ft)/1001 
+pvalue <- sum(hex_1_slopes_volume > hex_0_slopes_volume)/1001 
+```
+
+Uncertainty 
+```{r}
+# Ft
+residual.uncertainty((filter(hex, np == "term0")), hex_0_slopes_ft, "ft", "hexagonal, 0 Np")
+residual.uncertainty((filter(hex, np == "term1" | np == "term2")), hex_12_slopes_ft, "ft", "hexagonal, 1 or 2 Np")
+
+residual.uncertainty(ellip, ellip_slopes_ft, "ft", "ellip")
+
+
+# Volume
+residual.uncertainty((filter(hex, np == "term0")), hex_0_slopes_volume, "volume", "hexagonal, 0 Np")
+residual.uncertainty((filter(hex, np == "term1" | np == "term2")), hex_12_slopes_volume, "volume", "hexagonal, 1 or 2 Np")
+
+#ggplotly(p, tooltip = c("key", "key2"))
+
+residual.uncertainty(ellip, ellip_slopes_volume, "volume", "ellip")
+
+```
+
+
+
 # Nested Dataframe REQUIRED for all linear regressions below: 
 ```{r}
 # Created nested dataframe. Can add parameters here, just change the "11" in "nrow" when compiling results into a dataframe. 
 
-sample_df <- apatite |> 
-  select(gem, gc, ri, np, geo, size.cat, db.ft, s.ft, db.v, s.v, s.esr.ft, db.esr.ft) |> 
-  pivot_longer(1:6, values_to = "grouping") |> 
-  group_by(name, grouping) |> 
+sample_df <- apatite %>% 
+  select(gem, gc, ri, np, geo, size.cat, db.ft, s.ft, db.v, s.v, s.esr.ft, db.esr.ft) %>% 
+  pivot_longer(1:6, values_to = "grouping") %>% 
+  group_by(name, grouping) %>% 
   nest()
 
 ```
@@ -25,7 +81,7 @@ This code chunk creates the results (ie. mean slope, mean std.err, plot slope) &
 
 ```{r}
 # Use 'map' to apply function over a list of dataframes (ie. the nested df above). 
-param <-  "ft" 
+param <-  "volume" 
 #MUST CHANGE THIS FOR EACH PARAMETER YOU WANT TO RUN #ie. "ft", "volume", "esr"
 
 results_boot <- pmap(list(sample_df[[3]], 
@@ -40,23 +96,23 @@ slopes_boot <- results_flat[seq(2, length(results_flat), 3)]
 residuals_og <- results_flat[seq(3, length(results_flat), 3)]
 
 # results --> tidy dataframe
-results_boot_df <- data.frame(matrix(unlist(results_boot), nrow = 19, byrow = T))  |> 
-  rename(slope = X1, std.err = X2, plot.slope = X3) |>
-  bind_cols(sample_df[,2]) |>
-  relocate(grouping, .before = slope) |>
-  tibble() |>
-  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) |>
-  #mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "hexagonal", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) |>
+results_boot_df <- data.frame(matrix(unlist(results_boot), nrow = 19, byrow = T))  %>% 
+  rename(slope = X1, std.err = X2, plot.slope = X3) %>%
+  bind_cols(sample_df[,2]) %>%
+  relocate(grouping, .before = slope) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) %>%
+  #mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "hexagonal", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) %>%
   arrange(grouping)
 
 #Save results to named dataframe 
-assign(paste("results_boot_hex", glue("{param}"), sep =  "_"), results_boot_df)
+assign(paste("results_boot", glue("{param}"), sep =  "_"), results_boot_df)
 
 # slopes --> tidy dataframe
 # To calculate an uncertainty on the correction, a vector of all 1001 slopes split out by the bootstrapping procedure is saved into its own file.
-slopes_boot_df <- data.frame(matrix(unlist(slopes_boot), nrow = 1001, byrow = FALSE)) |>
-  rename(C2 = X1, C = X2, `2` = X3, term1 = X4, ellipsoid = X5, common = X6, term0 = X7, C1 = X8, `1` = X9, term2 = X10, `rare- large` = X11, B2 = X12, B = X13, hexagonal = X14, B1 = X15, A2 = X16, A = X17, A1 = X18, `rare- small` = X19) |>
-  tibble() |>
+slopes_boot_df <- data.frame(matrix(unlist(slopes_boot), nrow = 1001, byrow = FALSE)) %>%
+  rename(C2 = X1, C = X2, `2` = X3, term1 = X4, ellipsoid = X5, common = X6, term0 = X7, C1 = X8, `1` = X9, term2 = X10, `rare- large` = X11, B2 = X12, B = X13, hexagonal = X14, B1 = X15, A2 = X16, A = X17, A1 = X18, `rare- small` = X19) %>%
+  tibble() %>%
   select("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large")
 
 #Save results to named dataframe 
@@ -118,62 +174,95 @@ sum(slopes_boot1 > slopes_boot0)/1001
 
 # Uncertainty Calculations
 
-Calculate % differences 
-Plot % differences (ie. residuals) vs. Maximum width 
-For each size or roughness or something, find the sd of the % difference, this is your uncertainty on the correction
-
 ```{r}
 
-residual.uncertainty <- function (parameter, group, data, color) {
+residual.uncertainty <- function (parameter_df, slope_df, parameter, group) {
+  #parameter_df --> a, b, c, ri1, ellip, etc. 
+  #slope_df ---> hex_0_slopes_ft, etc. 
+  #parameter --> "ft", "volume", "esr"
+  #group --> "hexagonal", "term1", etc. (ie. the name of the grouping from the results_boot sheet)
+  #color --> color the points in the output plot by something ie. size.cat, ri, etc. 
+ 
+    sample_df <- parameter_df %>%
+select(sample, gem, gc, ri, np, broken, size.cat, j.w1, s.ft, db.ft, s.v, db.v, db.esr.ft, s.esr.ft)
   
   if (parameter == "ft") {
+    #slope <- results_boot_ft %>% filter(grouping == group) %>% select(slope) %>% as.numeric() 
+    slope <- mean(slope_df)
+    
+    sample_df <- cbind(sample_df, slope)
   
-    slope <- results_boot_ft |> filter(grouping == group) |> select(slope) |> as.numeric() 
-  
-  df <- data |>
-  select(sample, gem, gc, ri, np, size.cat, j.w1, db.ft, db.v, db.esr.ft) |>
-  cbind(slope)
-  
-  actual <- df$db.ft
-  predicted <- df$slope * actual
-  
-  resid_mine <<- actual - predicted + 0 
-  percent.diff <<- (resid_mine / actual) * 100
+    actual <- sample_df$s.ft
+    yhat <- sample_df$slope * sample_df$db.ft
+    resid <- actual - yhat 
+    percent.diff <- (resid / actual) * 100
 
-kms <- cbind(percent.diff, df)
-
+    sample_df <- cbind(percent.diff, sample_df)
   }
-p <- ggplot(kms, aes(j.w1, percent.diff, color = glue({color}))) +
-  geom_point() +
-  labs(x = "Maximum Width (µm)", y = "Residuals as a % Difference", title = paste(glue("{parameter}"), "residuals for", glue("{group}"), "grains", sep = " "))
+  
+  if (parameter == "volume") {
+    #slope <- results_boot_volume %>% filter(grouping == group) %>% select(slope) %>% as.numeric() 
+    slope <- mean(slope_df)
+    
+    sample_df <- cbind(sample_df, slope)
+  
+    actual <- sample_df$s.v
+    yhat <- sample_df$slope * sample_df$db.v
+    resid <- actual - yhat 
+    percent.diff <- (resid / actual) * 100
 
-assign(paste("uncertainty", glue("{parameter}"), glue("{group}"), sep = "_"), sd(percent.diff)) 
+    sample_df <- cbind(percent.diff, sample_df)
+    
+  }
+  
+    if (parameter == "esr") {
+    slope <- mean(slope_df)
+  
+    sample_df <- cbind(sample_df, slope)
+  
+    actual <- sample_df$s.esr.ft
+    yhat <- sample_df$slope * sample_df$db.esr.ft
+    resid <- actual - yhat 
+    percent.diff <- (resid / actual) * 100
 
-print(sd(percent.diff))
-return(p)
+    sample_df <- cbind(percent.diff, sample_df)
+    
+  }
+  
+p <- ggplot(sample_df, aes(j.w1, percent.diff)) +
+  geom_hline(mapping=aes(yintercept = 0)) +
+  labs(x = "Maximum Width (µm)", y = "Residuals as a % Difference", title = paste(glue("{parameter}"), "residuals for", glue("{group}"), "grains", sep = " ")) 
+
+assign(paste("uncertainty", glue("{parameter}"), glue("{group}"), sep = "_"), (sd(percent.diff)), envir = parent.frame()) 
+
+ri_summary <- sample_df %>%
+  select(sample, ri, size.cat, gc, gem, np, percent.diff) %>%
+  group_by(ri) %>%
+  summarise(sd_residuals = sd(percent.diff))
+
+size_summary <- sample_df %>%
+  select(sample, ri, size.cat, gc, gem, np, percent.diff) %>%
+  group_by(size.cat) %>%
+  summarise(sd_residuals = sd(percent.diff))
+
+print(ri_summary)
+print(size_summary)
+print(tibble(sd(percent.diff)))
+
+if (parameter == "volume" & group != "ellip") {
+  p <- p + geom_point(mapping= aes(color = ri)) + scale_color_uchicago(palette = "default")
+} 
+if (parameter == "ft" & group != "ellip") { 
+  p <- p + geom_point(mapping = aes(color = size.cat)) + scale_color_jco(palette = "default")
 }
 
-residual.uncertainty("ft", "A", a, "ri")
+if (group == "ellip") { #parameter == "ft" | parameter == "volume" & 
+  p <- p + geom_point(color = "darkseagreen4") 
+}
 
-ggplot(ellip, aes(s.ft, db.ft)) +
-  geom_point() + 
-  geom_point(ellip, mapping = aes(s.ft, predicted), color = "red") +
-  geom_abline(slope = 1/slope, intercept = 0) +
-  geom_abline(slope = 1, intercept = 0)
-
+  return(p)
+}
 ```
-
-```{r}
-#hexagonal, ft
-hex1 <- apatite |> filter(geo == "hexagonal") |> filter(ri == "1")
-hex2 <-apatite |> filter(geo == "hexagonal") |> filter(ri == "2")
-correction <- hex$db.ft * 1.024998 + 0 
-residual <- hex$db.ft - correction
-
-sd(residual)
-
-```
-
 
 
 
@@ -194,18 +283,18 @@ results_nf_boot <- pmap(list(sample_df[[3]],
                      bootstrap.linreg.nest.not.fixed)
 
 # Convert the lists of lists spit out by 'map' into a dataframe that is pretty & in the correct order. 
-# Seperate slopes from other results
+# Separate slopes from other results
 results_nf_flat <- flatten(results_nf_boot) 
 results_nf_boot <- results_nf_flat[seq(1, length(results_nf_flat), 3)]
 intercepts_boot <- results_nf_flat[seq(2, length(results_nf_flat), 3)]
 slopes_nf_boot <- results_nf_flat[seq(3, length(results_nf_flat), 3)]
   
-results_nf_boot_df <- data.frame(matrix(unlist(results_nf_boot), nrow = 19, byrow = T)) |>
-  rename(slope = X1, intercept = X2, std.err = X3, plot.slope = X4, lower.conf.intercept = X5, upper.conf.intercept = X6) |>
-  bind_cols(sample_df[,2]) |>
-  relocate(grouping, .before = slope.mean) |>
-  tibble() |>
-  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) |>
+results_nf_boot_df <- data.frame(matrix(unlist(results_nf_boot), nrow = 19, byrow = T)) %>%
+  rename(slope = X1, intercept = X2, std.err = X3, plot.slope = X4, lower.conf.intercept = X5, upper.conf.intercept = X6) %>%
+  bind_cols(sample_df[,2]) %>%
+  relocate(grouping, .before = slope.mean) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) %>%
   arrange(grouping)
 
 #Save results to named dataframe 
@@ -214,9 +303,9 @@ assign(paste("results_nf_boot", glue("{param}"), sep =  "_"), results_nf_boot_df
 # intercepts --> tidy dataframe
 # To calculate an uncertainty on the correction, a vector of all 1001 intercepts split out by the bootstrapping procedure is saved into its own file.
 
-intercepts_boot_df <- data.frame(matrix(unlist(intercepts_boot), nrow = 1001, byrow = FALSE)) |>
-  rename(C2 = X1, C = X2, `2` = X3, term1 = X4, ellipsoid = X5, common = X6, term0 = X7, C1 = X8, `1` = X9, term2 = X10, `rare- large` = X11, B2 = X12, B = X13, hexagonal = X14, B1 = X15, A2 = X16, A = X17, A1 = X18, `rare- small` = X19) |>
-  tibble() |>
+intercepts_boot_df <- data.frame(matrix(unlist(intercepts_boot), nrow = 1001, byrow = FALSE)) %>%
+  rename(C2 = X1, C = X2, `2` = X3, term1 = X4, ellipsoid = X5, common = X6, term0 = X7, C1 = X8, `1` = X9, term2 = X10, `rare- large` = X11, B2 = X12, B = X13, hexagonal = X14, B1 = X15, A2 = X16, A = X17, A1 = X18, `rare- small` = X19) %>%
+  tibble() %>%
   select("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large")
 
 #Save results to named dataframe 
@@ -225,9 +314,9 @@ assign(paste("intercepts_boot", glue("{param}"), sep =  "_"), intercepts_boot_df
 # slopes --> tidy dataframe
 # To calculate an uncertainty on the correction, a vector of all 1001 slopes split out by the bootstrapping procedure is saved into its own file.
 
-slopes_nf_boot_df <- data.frame(matrix(unlist(slopes_nf_boot), nrow = 1001, byrow = FALSE)) |>
-  rename(C2 = X1, C = X2, `2` = X3, term1 = X4, ellipsoid = X5, common = X6, term0 = X7, C1 = X8, `1` = X9, term2 = X10, `rare- large` = X11, B2 = X12, B = X13, hexagonal = X14, B1 = X15, A2 = X16, A = X17, A1 = X18, `rare- small` = X19) |>
-  tibble() |>
+slopes_nf_boot_df <- data.frame(matrix(unlist(slopes_nf_boot), nrow = 1001, byrow = FALSE)) %>%
+  rename(C2 = X1, C = X2, `2` = X3, term1 = X4, ellipsoid = X5, common = X6, term0 = X7, C1 = X8, `1` = X9, term2 = X10, `rare- large` = X11, B2 = X12, B = X13, hexagonal = X14, B1 = X15, A2 = X16, A = X17, A1 = X18, `rare- small` = X19) %>%
+  tibble() %>%
   select("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large")
 
 #Save results to named dataframe 
@@ -275,12 +364,12 @@ results_taylor <- pmap(list(sample_df[[3]],
                             glue("{param}")), 
                        taylor.uncertainty)
 
-results_taylor_df <- data.frame(matrix(unlist(results_taylor), nrow = 19, byrow = TRUE)) |>
-  rename(slope = X1, sigma.slope = X2, plot.slope = X3) |>
-  bind_cols(sample_df[,2], sample_df[,1]) |>
-  relocate(grouping, name, .before = slope) |>
-  tibble() |>
-  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) |>
+results_taylor_df <- data.frame(matrix(unlist(results_taylor), nrow = 19, byrow = TRUE)) %>%
+  rename(slope = X1, sigma.slope = X2, plot.slope = X3) %>%
+  bind_cols(sample_df[,2], sample_df[,1]) %>%
+  relocate(grouping, name, .before = slope) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) %>%
   arrange(grouping)
 
 #Save results to named dataframe 
@@ -309,12 +398,12 @@ results_nf_taylor <- pmap(list(sample_df[[3]],
                             glue("{param}")), 
                        taylor.uncertainty.not.fixed)
 
-results_nf_taylor_df <- data.frame(matrix(unlist(results_nf_taylor), nrow = 19, byrow = TRUE)) |>
-  rename(slope = X1, sigma.slope = X2, intercept = X3, sigma.intercept =X4, plot.slope = X5) |>
-  bind_cols(sample_df[,2], sample_df[,1]) |>
-  relocate(grouping, name, .before = slope) |>
-  tibble() |>
-  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) |>
+results_nf_taylor_df <- data.frame(matrix(unlist(results_nf_taylor), nrow = 19, byrow = TRUE)) %>%
+  rename(slope = X1, sigma.slope = X2, intercept = X3, sigma.intercept =X4, plot.slope = X5) %>%
+  bind_cols(sample_df[,2], sample_df[,1]) %>%
+  relocate(grouping, name, .before = slope) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) %>%
   arrange(grouping)
 
 #Save results to named dataframe 

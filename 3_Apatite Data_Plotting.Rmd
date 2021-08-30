@@ -28,10 +28,10 @@ colorspace::swatchplot(tf_color)
 
 Exploring Ft
 ```{r}
-apatite |>
-  filter(geo == "hexagonal") |>
+apatite %>%
+  #filter(gc == "C") %>%
   
-ggplot(aes(x = s.ft, y = db.ft, color= np)) + #, key = sample, key2= broken, key3 = notes
+ggplot(aes(x = s.ft, y = db.ft, color= size.cat)) + #, key = sample, key2= broken, key3 = notes
   geom_smooth(method= "lm", formula = y~0+x, se=F) +
   geom_point(size = 2) +
   
@@ -46,21 +46,19 @@ ggplot(aes(x = s.ft, y = db.ft, color= np)) + #, key = sample, key2= broken, key
   geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
   geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
 
-
 #ggplotly(p,  tooltip = c("key", "key2", "key3"))
 ```
 
 Exploring Volume
 ```{r}
-apatite_rm |>
- filter(geo == "hexagonal") |>
+p <- hex %>%
   
-ggplot(aes(x = s.v, y = db.v, color=np)) + #key = sample, key2 = broken, key3 = poor.segmentation
+ggplot(aes(x = s.v, y = db.v, color=size.cat)) + # 
   geom_smooth(method= "lm", formula = y~0+x, se = F) +
   geom_point(size = 2) +
+  
   labs(title = "Manual 2D vs. Nano-CT 3D Volume", x= "2D Volume", y= "3D Volume") +
   scale_color_manual(values = cb) +
-  
   #xlim(0,750000) + ylim(0, 1000000) +
   geom_abline(slope=1, intercept = 0) + 
   geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
@@ -73,14 +71,14 @@ ggplot(aes(x = s.v, y = db.v, color=np)) + #key = sample, key2 = broken, key3 = 
   geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
   geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
   geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2)  #40%
-  
-#ggplotly(p,  tooltip = c("key", "key2", "key3"))
+p
+ggplotly(p,  tooltip = c("key", "key2", "key3"))
 ```
 
 Exploring ESR Ft
 ```{r}
-common_apatite |>
-  filter(gem.geo == "C") |>
+common_apatite %>%
+  filter(gem.geo == "C") %>%
   
   ggplot(mapping=aes(x = s.esr.ft, y = db.esr.ft, color = np)) +
   geom_smooth(method= "lm", formula = y ~ 0 + x, se = FALSE) +
@@ -230,7 +228,7 @@ Testing how to keep colors the same across plots for samples for morgan
   #scale_color_brewer(palette = "Set1", drop = TRUE,limits = levels(df7.sep$samplename)) +geom_point()
 
 ##Creating a new dataset by filtering. New dataset only contains mount 2. 
-#df7.sep.mount2 <- df7.sep |> filter(mount == 2) 
+#df7.sep.mount2 <- df7.sep %>% filter(mount == 2) 
 
 ##Plotting mount 2
 #p2 <- ggplot(df7.sep.mount2, mapping= aes(s.ft, db.ft, color=samplename)) + 
@@ -365,8 +363,8 @@ if (abs(diff) < abs(uncert)) {
 
 SA:V Ratios 
 ```{r}
-df7 <- df7 |>
-  dplyr::mutate(db.sav.ratio = 3*db.v/db.sa) |>
+df7 <- df7 %>%
+  dplyr::mutate(db.sav.ratio = 3*db.v/db.sa) %>%
   dplyr::mutate(s.sav.ratio = 3*s.v/s.sa)
 
 ggplot() + 
@@ -385,7 +383,7 @@ ggplot() +
 ```{r}
 quad.df.ft <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Linear Reg Results.xlsx", sheet= "ft.comp")
 
-quad.df.ft <- quad.df.ft |>
+quad.df.ft <- quad.df.ft %>%
   select(gem, method.grains, slope, sigma.slope, intercept, sigma.intercept, gem.cat) 
 quad.df.ft <- quad.df.ft[order(quad.df.ft$gem),]
 quad.df.ft$gem <- factor(quad.df.ft$gem, levels = c("A1", "A2", "A3", "A", "B1", "B2", "B3", "B", "AB", "C1", "C2", "C3", "C"))
@@ -408,17 +406,17 @@ geom_pointrange(aes(ymin=slope-sigma.slope, ymax=slope+sigma.slope, color= metho
 quad.df.v <- read_excel("/Users/spencerzeigler/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/Step 8- Statistics/Linear Reg Results.xlsx", sheet= "vol.reg.master")
 quad.df.v <- quad.df.v[c(53:130),]
 
-quad.df.v <- quad.df.v |>
+quad.df.v <- quad.df.v %>%
   select(gem, method.grains, slope, sigma.slope, intercept, sigma.intercept, gem.cat) 
 quad.df.v <- quad.df.v[order(quad.df.v$gem),]
 
 quad.df.v$gem <- factor(quad.df.v$gem, levels = c("A1", "A2", "A3", "A", "B1", "B2", "B3", "B", "AB", "C1", "C2", "C3", "C"))
-quad.df.v <- quad.df.v |>
-  #filter(!method.grains == "common.only.lm") |>
-  #filter(!method.grains == "common.only.lm.fixed") |>
-  filter(!method.grains == "common.small.rlm") |>
-  filter(!method.grains == "common.large.rlm") |>
-  filter(!method.grains == "common.small.lm") |>
+quad.df.v <- quad.df.v %>%
+  #filter(!method.grains == "common.only.lm") %>%
+  #filter(!method.grains == "common.only.lm.fixed") %>%
+  filter(!method.grains == "common.small.rlm") %>%
+  filter(!method.grains == "common.large.rlm") %>%
+  filter(!method.grains == "common.small.lm") %>%
   filter(!method.grains == "common.large.lm")
 
 #####################################################################

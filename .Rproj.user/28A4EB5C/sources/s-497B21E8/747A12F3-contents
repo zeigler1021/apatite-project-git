@@ -76,6 +76,7 @@ tf_color <- c("#ed6a5e", "#9ebc9e", "#553e4e")
 Import master datasheet
 ```{r}
 apatite <- read_excel("./Data Comps_Final.xlsx", sheet="Data Comps") 
+
 as_tibble(apatite)
 ```
 
@@ -112,37 +113,40 @@ Import Linear Regression Data
 Making dataframe of 'common only' apatite
 ```{r}
 #Grains Removed
-#common_apatite <- apatite |>
+#common_apatite <- apatite %>%
   #filter(!size.name == "Large & Rare", !size.name == "Small & Rare")
 ```
 
 Making parameter based dataframes
 ```{r}
 #Dataframe by Roughness Index 
-ri1 <- apatite |> filter(ri=="1")
-ri2 <- apatite |> filter(ri=="2")
+ri1 <- apatite %>% filter(ri=="1")
+ri2 <- apatite %>% filter(ri=="2")
 
 #Dataframe by Geometric Classification
-a <- apatite |> filter(gc=="A") 
-b <- apatite |> filter(gc=="B") 
-c <- apatite |> filter(gc=="C") 
+a <- apatite %>% filter(gc=="A") 
+b <- apatite %>% filter(gc=="B") 
+c <- apatite %>% filter(gc=="C") 
 
 #Create Dataframes split by both geometry and roughness 
-a1 <- apatite |> filter(gem == "A1") 
-a2 <- apatite |> filter(gem == "A2")
-b1 <- apatite |> filter(gem == "B1") 
-b2 <- apatite |> filter(gem == "B2")
-c1 <- apatite |> filter(gem == "C1") 
-c2 <- apatite |> filter(gem == "C2")
+a1 <- apatite %>% filter(gem == "A1") 
+a2 <- apatite %>% filter(gem == "A2")
+b1 <- apatite %>% filter(gem == "B1") 
+b2 <- apatite %>% filter(gem == "B2")
+c1 <- apatite %>% filter(gem == "C1") 
+c2 <- apatite %>% filter(gem == "C2")
 
 #Make dataframes based on terminations 
-term0 <- apatite |> filter(np == "term0")
-term1 <- apatite |> filter(np == "term1")
-term2 <- apatite |> filter(np == "term2")
+term0 <- apatite %>% filter(np == "term0")
+term1 <- apatite %>% filter(np == "term1")
+term2 <- apatite %>% filter(np == "term2")
 
 #Make dataframes based on geometry 
-hex <- apatite |> filter(geo == "hexagonal")
-ellip <- apatite |> filter(geo == "ellipsoid")
+hex <- apatite %>% filter(geo == "hexagonal")
+ellip <- apatite %>% filter(geo == "ellipsoid")
+
+hex <- apatite %>% filter(gc == "A" | gc == "B")
+ellip <- apatite %>% filter(gc == "C")
 ```
 
 #Load functions
