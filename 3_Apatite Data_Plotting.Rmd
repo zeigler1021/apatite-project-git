@@ -31,7 +31,7 @@ Exploring Ft
 apatite %>%
   #filter(gc == "C") %>%
   
-ggplot(aes(x = s.ft, y = db.ft, color= size.cat)) + #, key = sample, key2= broken, key3 = notes
+ggplot(aes(x = s.ft, y = db.ft, color= gc)) + #, key = sample, key2= broken, key3 = notes
   geom_smooth(method= "lm", formula = y~0+x, se=F) +
   geom_point(size = 2) +
   
@@ -95,6 +95,18 @@ common_apatite %>%
   geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
 ```
 
+Did changing all the Np to 2Np chaneg things a lot? Hope not!
+```{r}
+#Ft
+ggplot() + geom_point(apatite, mapping = aes(s.ft.ognp, s.ft, color = np.ognp, key = sample)) + geom_abline(mapping = aes(slope = 1, intercept = 0)) + labs(title = "Ft", x = "OG Np (0,1,2)", y = "2 Np")
+
+#Volume
+ ggplot() + geom_point(apatite, mapping = aes(s.v.ognp, s.v, color = np.ognp, key = sample)) + geom_abline(mapping = aes(slope = 1, intercept = 0)) + labs(title = "Volume", x = "OG Np (0,1,2)", y = "2 Np")
+#ESR
+p <- ggplot() + geom_point(apatite, mapping = aes(s.esr.ft.ognp, s.esr.ft, key = sample)) + geom_abline(mapping = aes(slope = 1, intercept = 0))
+
+ggplotly(p, tooltip = c("key"))
+```
 
 
 ############################################################################

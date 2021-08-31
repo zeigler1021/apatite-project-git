@@ -76,7 +76,7 @@ tf_color <- c("#ed6a5e", "#9ebc9e", "#553e4e")
 Import master datasheet
 ```{r}
 apatite <- read_excel("./Data Comps_Final.xlsx", sheet="Data Comps") 
-
+apatite <- apatite[-c(166, 217, 218, 244),] #delete termination end grains
 as_tibble(apatite)
 ```
 
@@ -93,8 +93,6 @@ apatite$size.name <- factor(apatite$size.name, levels=c("Small & Rare","Small & 
 
 apatite$size.cat <- factor(apatite$size.cat, levels = c("rare- small", "common",  "rare- large"))
 
-apatite$np <- factor(apatite$np, levels= c("term0", "term1", "term2"))
-
 groupings <- as.vector(c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"), mode = "character")
 ```
 
@@ -110,12 +108,6 @@ Import Linear Regression Data
 # }
 ```
 
-Making dataframe of 'common only' apatite
-```{r}
-#Grains Removed
-#common_apatite <- apatite %>%
-  #filter(!size.name == "Large & Rare", !size.name == "Small & Rare")
-```
 
 Making parameter based dataframes
 ```{r}
@@ -136,17 +128,17 @@ b2 <- apatite %>% filter(gem == "B2")
 c1 <- apatite %>% filter(gem == "C1") 
 c2 <- apatite %>% filter(gem == "C2")
 
-#Make dataframes based on terminations 
-term0 <- apatite %>% filter(np == "term0")
-term1 <- apatite %>% filter(np == "term1")
-term2 <- apatite %>% filter(np == "term2")
-
 #Make dataframes based on geometry 
 hex <- apatite %>% filter(geo == "hexagonal")
 ellip <- apatite %>% filter(geo == "ellipsoid")
 
 hex <- apatite %>% filter(gc == "A" | gc == "B")
 ellip <- apatite %>% filter(gc == "C")
+
+#Make dataframe based on size
+rare_small <- apatite %>% filter(size.cat == "rare- small")
+common <- apatite %>% filter(size.cat == "common")
+rare_large <- apatite %>% filter(size.cat == "rare- large")
 ```
 
 #Load functions
@@ -164,6 +156,7 @@ source("./Functions/function_taylor_uncertainties_nested_notfixed.R")
 source("./Functions/function_bootstrap_linreg_nested_notfixed.R")
 source("./Functions/function_manual_pvalue.R")
 source("./Functions/function_taylor_overlap.R")
+source("./Functions/function_residual_uncertainty.R")
 ```
 
 Plotting functions
