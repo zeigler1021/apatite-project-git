@@ -137,26 +137,27 @@ grouping_geo <- c("hexagonal", "ellipsoid")
 ```
 
 ```{r}
+# Must run this code twice. Once with all the suffixes on grouping and params = gem and once with it = geo.
 
-grouping <- grouping_gem
-params <- "ft_gem"
-params <- "volume_gem"
-params <- "esr_gem"
+grouping <- grouping_geo
+params_ft <- "ft_geo"
+params_vol <- "volume_geo"
+params_esr <- "esr_geo"
 manual.pvalue(slopes_boot_ft, 
               glue("{grouping}"), 
-              glue("{params}"), 
+              glue("{params_ft}"), 
               0.90, 0.1) 
 
 
 manual.pvalue(slopes_boot_volume, 
               glue("{grouping}"), 
-              glue("{params}"), 
+              glue("{params_vol}"), 
               0.90, 0.1) 
 
 
 manual.pvalue(slopes_boot_esr, 
               glue("{grouping}"), 
-              glue("{params}"), 
+              glue("{params_esr}"), 
               0.90, 0.1) 
 
 ```
@@ -181,7 +182,7 @@ p.gem <- ggplot(pvalue_ft_gem, aes(x = var1, y = var2, fill = discrete)) +
                       labels = c("Slopes are different", "Slopes are same", "NA"), 
                       name = "Legend") 
 
-p.geo <- ggplot(pvalue_ft_gem, aes(x = var1, y = var2, fill = discrete)) + 
+p.geo <- ggplot(pvalue_ft_geo, aes(x = var1, y = var2, fill = discrete)) + 
     geom_tile(color = "black") +
     theme_bw() +
     theme(axis.title = element_blank()) +
@@ -251,7 +252,7 @@ p.geo <- ggplot(pvalue_esr_geo, aes(x = var1, y = var2, fill = discrete)) +
     geom_text(aes(label = round(pvalue,2)), size = 3, color = "black") +
     scale_fill_manual(values = tf_color,
                       breaks = c("Slopes are diff", "Slopes are same", "NA"),
-                      labels = c("Slopes are different", "Slopes are same", "NA"), 
+                      labels = c("Slopes are\ndifferent", "Slopes are same", "NA"), 
                       name = "Legend") 
 
 p.gem + p.geo + patchwork::plot_annotation(title = "Are the slopes of the regression for\neach GEM category significantly different or not? ", subtitle = "Rs Slopes at 90% Confidence")
@@ -261,20 +262,77 @@ p.gem + p.geo + patchwork::plot_annotation(title = "Are the slopes of the regres
 ## Bootstrapping 
 Goal: get the correction values we care about. We want a correction for all A & B grains (hexagonal) and a correction for all C grains (ellipsoid)
 ```{r}
+#Must run this code 3 times. Once for "ft", "volume" "esr". Change it at "parameter". 
+parameter <- "esr"
+
 #Hexagonal Grains 
-bootstrap.linreg()
+hex <- filter(apatite, gc == "A" | gc == "B")
+bootstrap.linreg(hex, parameter, "hex")
+
+#Ellipsoid Grains
+ellip <- filter(apatite, gc == "C")
+bootstrap.linreg(ellip, parameter, "ellip")
+
 ```
+
 Result: 
 ```{r}
-#print results 
+#Ft
+kable(bind_rows(select(hex_results_ft, slope), select(ellip_results_ft,slope)) %>% bind_cols(c("Hexagonal", "Ellipsoid")) %>% rename(Geometry = ...2, Slope = slope) %>% relocate(Geometry), caption = "The correction (ie. slope of the regression) for each geometry subset for Ft. Hexagonal = A & B grains, Ellipsoid = C grains.")
+#Volume
+kable(bind_rows(select(hex_results_volume, slope), select(ellip_results_volume,slope)) %>% bind_cols(c("Hexagonal", "Ellipsoid")) %>% rename(Geometry = ...2, Slope = slope) %>% relocate(Geometry), caption = "The correction (ie. slope of the regression) for each geometry subset for Volume. Hexagonal = A & B grains, Ellipsoid = C grains.")
+#Rs
+kable(bind_rows(select(hex_results_esr, slope), select(ellip_results_esr,slope)) %>% bind_cols(c("Hexagonal", "Ellipsoid")) %>% rename(Geometry = ...2, Slope = slope) %>% relocate(Geometry), caption = "The correction (ie. slope of the regression) for each geometry subset for Rs. Hexagonal = A & B grains, Ellipsoid = C grains.")
 ```
 
 ## Uncertainties
-Goal A: determine if there are parameters that control the uncertainty on the regression. We will analyze two parameters: roughness and size. 
+Goal A: determine if there are parameters that control the uncertainty on the regression. We will analyze two parameters: roughness and size. Only for hexagonal grains. The C category is too small to split into further categories (n=37) so the uncertainty will be flat. 
+
+```{r}
+#Ft Hexagonal
+residual.uncertainty("ft", "hex")
+#Volume Hexagonal
+residual.uncertainty("volume", "hex")
+#Rs Hexagonal
+residual.uncertainty("esr", "hex")
+```
+
+Results:
+```{r}
+#Ft Hexagonal
+plots_hex_ft[[1]] + plots_hex_ft[[2]] + plot_annotation(title = "Residuals for Hexagonal Grains for Ft", subtitle = "Is there a pattern within roughness or size?")
+ 
+kable(table_hex_ft[[1]])
+kable(table_hex_ft[[2]])
+
+#Volume Hexagonal
+plots_hex_volume[[1]] + plots_hex_volume[[2]] + plot_annotation(title = "Residuals for Hexagonal Grains for Volume", subtitle = "Is there a pattern within roughness or size?")
+ 
+kable(table_hex_volume[[1]])
+kable(table_hex_volume[[2]])
+
+#ESR Hexagonal
+plots_hex_esr[[1]] + plots_hex_esr[[2]] + plot_annotation(title = "Residuals for Hexagonal Grains for Rs", subtitle = "Is there a pattern within roughness or size?")
+ 
+kable(table_hex_esr[[1]])
+kable(table_hex_esr[[2]])
+```
+Our final results indicate that for Ft and Rs, there is a pattern with regard to size and for volume, there is a pattern with regards to roughness. Therefore, our final results reflect this. The uncertainties on the correction are controlled by roughness or size. 
+
 Goal B: determine the uncertainty on the correction using the residuals from the linear regression and split by controlling parameter (ie. for volume, roughness. for Ft/Rs, size). 
 ```{r}
+kable(table_hex_ft[[2]], caption = "Uncertainty on Ft correction split by size category for hexagonal grains.")
+kable(table_hex_volume[[1]], caption = "Uncertainty on Volume correction split by grain roughness.")
+kable(table_hex_esr[[2]], caption = "Uncertainty on Rs correction split by size category.")
 
+#Ellipsoid results
+residual.uncertainty("ft", "ellip")
+residual.uncertainty("volume", "ellip")
+residual.uncertainty("esr", "ellip")
+
+kable(bind_cols(c(sd(uncert_result_ellip_ft$percent_diff), sd(uncert_result_ellip_volume$percent_diff), sd(uncert_result_ellip_esr$percent_diff)), c("Ft", "Volume", "Rs")) %>% rename(Uncertainty = ...1, Parameter = ...2) %>% relocate(Parameter, .before = Uncertainty), caption = "Uncertainty on corrections for ellipsoid grains. Due to small sample number (N=37), these uncertainties are not controlled by a parameter like roughness or size.")
 ```
+
 
 Results: 
 ```{r}
@@ -285,8 +343,18 @@ Results:
 ## Results! 
 Goal: we have corrected for the geometric uncertainty for Ft, volume (eU), and Rs! 
 ```{r}
-#print corrections and results and celerrate good times come on
+#print corrections and results and celebrate good times come on
 ```
+
+
+
+
+
+
+
+
+
+
 
 
 # Bootstrap p-value comparison code: 

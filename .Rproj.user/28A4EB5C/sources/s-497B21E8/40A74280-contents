@@ -18,9 +18,11 @@ ggthemes_data$tableau #colorblind #prints hex codes from ggthemes
 dichromat::colorschemes
 
 qual_color_random <- c("#322288", "#aa4499", "#44aa99", "#671000", "#989934", "#6599cc", "#aa4466", "#ddcc77", "#000000")
-cb <- c("#595959", "#5f9ed1", "#c85200")
+cb <- c("#c85200", "#5f9ed1","#595959")
 cb2 <- c("#f06400", "#949494", "#008CF0")
 cb3 <- c("#4ACBFA", "#FAA35E", "#6E61DB")
+cb4 <- c("#51796A", "#F5B347")
+cb5 <- c("#497A7A", "#F7D552")
 
 colorspace::swatchplot(tableau_color_pal("Color Blind"))
 colorspace::swatchplot(tf_color)
@@ -28,15 +30,16 @@ colorspace::swatchplot(tf_color)
 
 Exploring Ft
 ```{r}
-apatite %>%
-  #filter(gc == "C") %>%
-  
+p.ft <- apatite %>%
 ggplot(aes(x = s.ft, y = db.ft, color= gc)) + #, key = sample, key2= broken, key3 = notes
   geom_smooth(method= "lm", formula = y~0+x, se=F) +
   geom_point(size = 2) +
   
-  labs(title = "Manual 2D vs. Nano-CT 3D Ft", x= "2D Ft", y= "3D Ft") + 
+  labs(x= "2D Ft", y= "3D Ft") + #title = "Manual 2D vs. Nano-CT 3D Ft"
   scale_color_tableau(palette = "Color Blind") +
+  #scale_color_manual(values = cb5) +
+  theme_set(theme_classic()) +
+  theme(legend.position = "none") +
                       
   geom_abline(slope=1, intercept = 0) + 
   geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
@@ -47,19 +50,24 @@ ggplot(aes(x = s.ft, y = db.ft, color= gc)) + #, key = sample, key2= broken, key
   geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
 
 #ggplotly(p,  tooltip = c("key", "key2", "key3"))
+lm(s.ft ~ 0 + db.ft, ellip)
+1/1.083
+lm(db.ft ~ 0 + s.ft, ellip)
 ```
 
 Exploring Volume
 ```{r}
-p <- hex %>%
+apatite %>%
   
-ggplot(aes(x = s.v, y = db.v, color=size.cat)) + # 
+ggplot(aes(x = s.v, y = db.v, color=gc)) + # 
   geom_smooth(method= "lm", formula = y~0+x, se = F) +
   geom_point(size = 2) +
   
-  labs(title = "Manual 2D vs. Nano-CT 3D Volume", x= "2D Volume", y= "3D Volume") +
-  scale_color_manual(values = cb) +
-  #xlim(0,750000) + ylim(0, 1000000) +
+  labs(title = "Manual 2D vs. Nano-CT 3D Volume", subtitle = "The slopes for A and B grains overlap, while C grains are distinct", x= "2D Volume (µm3)", y= "3D Volume (µm3)") +
+  scale_color_manual(values = cb,
+                     breaks = c("A", "B", "C"), 
+                     name = "Legend") +
+  xlim(0,750000) + ylim(0, 1000000) +
   geom_abline(slope=1, intercept = 0) + 
   geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
   geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
@@ -71,21 +79,21 @@ ggplot(aes(x = s.v, y = db.v, color=size.cat)) + #
   geom_abline(slope=1.42, intercept=0, size=.1, linetype= 2) + #30%
   geom_abline(slope=.6, intercept=0, size=.1, linetype= 2) + #40%
   geom_abline(slope=1.66, intercept=0, size=.1, linetype= 2)  #40%
-p
-ggplotly(p,  tooltip = c("key", "key2", "key3"))
+
 ```
 
 Exploring ESR Ft
 ```{r}
-common_apatite %>%
-  filter(gem.geo == "C") %>%
+p.rs <- apatite %>%
+  #filter(gem.geo == "C") %>%
   
-  ggplot(mapping=aes(x = s.esr.ft, y = db.esr.ft, color = np)) +
-  geom_smooth(method= "lm", formula = y ~ 0 + x, se = FALSE) +
+  ggplot(mapping=aes(x = s.esr.ft, y = db.esr.ft, color = gc)) +
+  geom_smooth(method= "lm", formula = y~0+x, se = FALSE) +
   geom_point(size = 2) +
-  labs(title = "Manual 2D vs. Nano-CT 3D ESR Ft", x= "2D ESR Ft", y= "3D ESR Ft") + 
-  scale_color_manual(values = cb2) +
-  
+  labs(x= "2D Rs-Ft", y= "3D Rs-Ft") + #title = "Manual 2D vs. Nano-CT 3D Rs-Ft"
+  scale_color_tableau(palette = "Color Blind",
+                     breaks = c("A", "B", "C"), 
+                     name = "Legend") +
   geom_abline(slope=1, intercept = 0) + 
   geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
   geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
@@ -93,7 +101,58 @@ common_apatite %>%
   geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
   geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
   geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
+
+p.ft + p.rs +plot_annotation(title = "Manual 2D vs. Nano-CT 3D Ft and Rs-Ft", subtitle = "The slopes for A and B grains overlap, while C grains are distinct")
 ```
+
+Uncertainty plots:
+
+#Ft 
+```{r}
+
+p.ft.res <- ggplot(uncert_result_hex_ft, aes(j.w1, percent_diff)) +
+  geom_hline(mapping=aes(yintercept = 0)) +
+  geom_point(mapping = aes(color = size.cat)) +
+  theme(legend.position = "none") +
+  scale_color_jco(palette = "default") +
+                  # name = "Legend", 
+                  # breaks = c("rare- small", "common", "rare- large"), 
+                  # labels = c("Small", "Average", "Large")) +
+  labs(x = "Maximum Width (µm)", y = "Ft Residuals as a % Difference") #, title = "Ft Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of Ft residuals are controlled by $\\textbf{size}.")
+
+```
+
+#Volume
+```{r}
+ggplot(uncert_result_hex_volume, aes(j.w1, percent_diff)) +
+  geom_hline(mapping=aes(yintercept = 0)) +
+  geom_point(mapping = aes(color = ri)) +
+  scale_color_jama(palette = "default", 
+                  name = "Legend", 
+                  breaks = c("1", "2"), 
+                  labels = c("Smooth", "Rough")) +
+  labs(x = "Maximum Width (µm)", y = "Residuals as a % Difference", title = "Volume Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of volume residuals are controlled by $\\textbf{roughness}."))
+```
+
+#Rs
+```{r}
+
+p.rs.res <- ggplot(uncert_result_hex_esr, aes(j.w1, percent_diff)) +
+  geom_hline(mapping=aes(yintercept = 0)) +
+  geom_point(mapping = aes(color = size.cat)) +
+  scale_color_jco(palette = "default", 
+                  name = "Legend", 
+                  breaks = c("rare- small", "common", "rare- large"), 
+                  labels = c("Small", "Average", "Large")) +
+  labs(x = "Maximum Width (µm)", y = "Rs-Ft Residuals as a % Difference") #, title = "Rs-Ft Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of Rs-Ft residuals are controlled by $\\textbf{size}.")
+uncert_result_hex_esr %>% group_by(size.cat) %>% summarise(sd_result = sd(percent_diff))
+
+p.ft.res + p.rs.res + plot_annotation(title = "Ft and Rs-Ft Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of Ft and Rs-Ft residuals are controlled by $\\textbf{size}."))
+
+```
+
+
+
 
 Did changing all the Np to 2Np chaneg things a lot? Hope not!
 ```{r}
