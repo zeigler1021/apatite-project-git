@@ -76,7 +76,7 @@ tf_color <- c("#ed6a5e", "#9ebc9e", "#553e4e")
 Import master datasheet
 ```{r}
 apatite <- read_excel("./Data Comps_Final.xlsx", sheet="Data Comps") 
-apatite <- apatite[-c(166, 217, 218, 244),] #delete termination end grains
+apatite <- apatite[-c(42, 166, 217, 218, 244),] #delete termination end grains
 as_tibble(apatite)
 ```
 

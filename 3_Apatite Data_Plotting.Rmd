@@ -145,6 +145,7 @@ p.rs.res <- ggplot(uncert_result_hex_esr, aes(j.w1, percent_diff)) +
                   breaks = c("rare- small", "common", "rare- large"), 
                   labels = c("Small", "Average", "Large")) +
   labs(x = "Maximum Width (µm)", y = "Rs-Ft Residuals as a % Difference") #, title = "Rs-Ft Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of Rs-Ft residuals are controlled by $\\textbf{size}.")
+uncert_result_hex_esr %>% group_by(size.cat) %>% summarise(sd_result = sd(percent_diff))
 
 p.ft.res + p.rs.res + plot_annotation(title = "Ft and Rs-Ft Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of Ft and Rs-Ft residuals are controlled by $\\textbf{size}."))
 
