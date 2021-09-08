@@ -9,15 +9,11 @@ manual.pvalue <- function (df, grouping, param, upper, lower, intercept_info = "
   
   #Iterate over every combination of grouping value and calculate a p-value
   pvalue <- list()
-  # for (i in 1:nrow(grid_df)) {
-  #   pvalue[i] <- sum(grid_df$var1[[i]] > grid_df$var2[[i]])/1000
-  # }
+ 
   for (i in 1:nrow(grid_df)) {
     pvalue[i] <- sum(grid_df$var1[[i]] > grid_df$var2[[i]])/1001 
   }
   pvalue <- unlist(pvalue)
-  #pvalue <- ifelse(pvalue >= 1, pvalue - 1, pvalue) #correct the pvalues to always be < 1. p values > 1 result from this being a 1 tailed test applied to 2 tailed data. 
-  #pvalue <- 2 *pvalue #two tailed test
   
   grouping <- grouping
   grouping_grid <- suppressMessages(expand_grid(grouping, grouping, .name_repair = "unique") %>%

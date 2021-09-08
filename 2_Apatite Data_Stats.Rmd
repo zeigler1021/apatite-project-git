@@ -139,10 +139,11 @@ grouping_geo <- c("hexagonal", "ellipsoid")
 ```{r}
 # Must run this code twice. Once with all the suffixes on grouping and params = gem and once with it = geo.
 
-grouping <- grouping_geo
-params_ft <- "ft_geo"
-params_vol <- "volume_geo"
-params_esr <- "esr_geo"
+grouping <- grouping_gem
+params_ft <- "ft_gem"
+params_vol <- "volume_gem"
+#params_esr <- "esr_geo"
+
 manual.pvalue(slopes_boot_ft, 
               glue("{grouping}"), 
               glue("{params_ft}"), 
@@ -155,10 +156,14 @@ manual.pvalue(slopes_boot_volume,
               0.90, 0.1) 
 
 
-manual.pvalue(slopes_boot_esr, 
-              glue("{grouping}"), 
-              glue("{params_esr}"), 
-              0.90, 0.1) 
+# manual.pvalue(slopes_boot_esr, 
+#               glue("{grouping}"), 
+#               glue("{params_esr}"), 
+#               0.90, 0.1) 
+
+
+####To compare tet to normal 
+sum(slope_boot_tet_ft$C > slope_boot_normal_ft$C)/1001
 
 ```
 
@@ -192,6 +197,8 @@ p.geo <- ggplot(pvalue_ft_geo, aes(x = var1, y = var2, fill = discrete)) +
                       breaks = c("Slopes are diff", "Slopes are same", "NA"),
                       labels = c("Slopes are different", "Slopes are same", "NA"), 
                       name = "Legend") 
+
+
 p.gem + p.geo + patchwork::plot_annotation(title = "Are the slopes of the regression for\neach GEM category significantly different or not? ", subtitle = "Ft Slopes at 90% Confidence")
 ```
 
@@ -263,7 +270,7 @@ p.gem + p.geo + patchwork::plot_annotation(title = "Are the slopes of the regres
 Goal: get the correction values we care about. We want a correction for all A & B grains (hexagonal) and a correction for all C grains (ellipsoid)
 ```{r}
 #Must run this code 3 times. Once for "ft", "volume" "esr". Change it at "parameter". 
-parameter <- "esr"
+parameter <- "ft"
 
 #Hexagonal Grains 
 hex <- filter(apatite, gc == "A" | gc == "B")
@@ -294,7 +301,7 @@ residual.uncertainty("ft", "hex")
 #Volume Hexagonal
 residual.uncertainty("volume", "hex")
 #Rs Hexagonal
-residual.uncertainty("esr", "hex")
+#residual.uncertainty("esr", "hex")
 ```
 
 Results:
@@ -312,10 +319,10 @@ kable(table_hex_volume[[1]])
 kable(table_hex_volume[[2]])
 
 #ESR Hexagonal
-plots_hex_esr[[1]] + plots_hex_esr[[2]] + plot_annotation(title = "Residuals for Hexagonal Grains for Rs", subtitle = "Is there a pattern within roughness or size?")
- 
-kable(table_hex_esr[[1]])
-kable(table_hex_esr[[2]])
+# plots_hex_esr[[1]] + plots_hex_esr[[2]] + plot_annotation(title = "Residuals for Hexagonal Grains for Rs", subtitle = "Is there a pattern within roughness or size?")
+#  
+# kable(table_hex_esr[[1]])
+# kable(table_hex_esr[[2]])
 ```
 Our final results indicate that for Ft and Rs, there is a pattern with regard to size and for volume, there is a pattern with regards to roughness. Therefore, our final results reflect this. The uncertainties on the correction are controlled by roughness or size. 
 
