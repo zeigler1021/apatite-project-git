@@ -30,13 +30,14 @@ colorspace::swatchplot(tf_color)
 
 Exploring Ft
 ```{r}
+color3 <- c("#004352", "#3fa38f", "#ef3e36")
 apatite %>%
 ggplot(aes(x = s.ft, y = db.ft, color= gc)) + 
   geom_smooth(method= "lm", formula = y~0+x, se=F) +
   geom_point(size = 2, shape = 16) +
   
   labs(x= "2D Ft", y= "3D Ft") + #, title = "Manual 2D vs. Nano-CT 3D Ft", subtitle = The slopes for A and B grains overlap, while C grains are distinct
-  scale_color_tableau(palette = "Color Blind",
+  scale_color_manual(values = color3,
                       breaks = c("A", "B", "C"), 
                       name = "Legend") +
   theme_set(theme_classic()) +
@@ -58,7 +59,7 @@ apatite %>%
   geom_smooth(method= "lm", formula = y~0+x, se = FALSE) +
   geom_point(size = 2, shape = 15) +
   labs(x= "2D Rs-Ft", y= "3D Rs-Ft") + #, title = "Manual 2D vs. Nano-CT 3D Rs-Ft"
-  scale_color_tableau(palette = "Color Blind",
+  scale_color_manual(values = color3,
                      breaks = c("A", "B", "C"), 
                      name = "Legend") +
   geom_abline(slope=1, intercept = 0) + 
@@ -73,13 +74,14 @@ apatite %>%
 
 Exploring Volume
 ```{r}
+pdf(width = 7.8, height = 3.85)
 apatite %>%
   
 ggplot(aes(x = s.v, y = db.v, color=gc)) + # 
   geom_smooth(method= "lm", formula = y~0+x, se = F) +
-  geom_point(size = 2, shape = 17) +
+  geom_point(size = 3, shape = 18) +
   labs(x = "2D Volume (µm3)", y = "3D Volume (µm3)") + #title = "Manual 2D vs. Nano-CT 3D Volume", subtitle = "The slopes for A and B grains overlap, while C grains are distinct",
-  scale_color_manual(values = cb,
+  scale_color_manual(values = color3,
                      breaks = c("A", "B", "C"), 
                      name = "Legend") +
   xlim(0,750000) + ylim(0, 1000000) +
@@ -100,15 +102,15 @@ ggplot(aes(x = s.v, y = db.v, color=gc)) + #
 Uncertainty plots:
 #Ft 
 ```{r}
+color <- c("#9a59e6", "#e03c81", "#db754e")
 ggplot(uncert_result_hex_ft, aes(j.w1, percent_diff, color = size.cat)) +
   geom_hline(mapping=aes(yintercept = 0)) +
   geom_point(shape = 16, size = 2) +
-  #theme(legend.position = "none") +
-  scale_color_jco(palette = "default", 
+  scale_color_manual(values = color, 
                    name = "Legend", 
                    breaks = c("rare- small", "common", "rare- large"),
-                   labels = c("Small", "Average", "Large")) +
-  labs(x = "Maximum Width (µm)", y = "Ft Residuals as a % Difference") #, title = "Ft Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of Ft residuals are controlled by $\\textbf{size}.")
+                   labels = c("Small\n(<50µm)\n", "Average\n(50-100µm)\n", "Large\n(>100µm)\n")) +
+  labs(x = "Maximum Width (µm)", y = "Residuals as a % Difference") #, title = "Ft Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of Ft residuals are controlled by $\\textbf{size}.")
 ```
 #Rs
 ```{r}
@@ -116,21 +118,21 @@ color <- c("#9a59e6", "#e03c81", "#db754e")
 ggplot(uncert_result_hex_esr, aes(j.w1, percent_diff, color = size.cat, )) +
   geom_hline(mapping=aes(yintercept = 0)) +
   geom_point(shape = 15, size = 2) +
+   #theme(legend.position = "none") +
   scale_color_manual(values = color, 
                   name = "Legend", 
                   breaks = c("rare- small", "common", "rare- large"), 
-                  labels = c("Small", "Average", "Large")) +
-  labs(x = "Maximum Width (µm)", y = "Rs-Ft Residuals as a % Difference", title = "Rs-Ft Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of Rs-Ft residuals are controlled by $\\textbf{size}.")) #
+                  labels = c("Small\n(<50µm)\n", "Average\n(50-100µm)\n", "Large\n(>100µm)\n")) +
+  labs(x = "Maximum Width (µm)", y = "Residuals as a % Difference") #, title = "Rs-Ft Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of Rs-Ft residuals are controlled by $\\textbf{size})."
 #uncert_result_hex_esr %>% group_by(size.cat) %>% summarise(sd_result = sd(percent_diff))
-
-p.rs.res
-#p.ft.res + p.rs.res + plot_annotation(title = "Ft and Rs-Ft Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of Ft and Rs-Ft residuals are controlled by $\\textbf{size}."))
 
 ```
 
 #Volume
 ```{r}
-color2 <- c("#3b8f8a", "#f5b30b")
+color2 <- c("#2b7237", "#f5b30b")
+
+#3b8f8a
 ggplot(uncert_result_hex_volume, aes(j.w1, percent_diff)) +
   geom_hline(mapping=aes(yintercept = 0)) +
   geom_point(mapping = aes(color = ri), shape = 18, size = 3) +
@@ -138,7 +140,7 @@ ggplot(uncert_result_hex_volume, aes(j.w1, percent_diff)) +
                   name = "Legend", 
                   breaks = c("1", "2"), 
                   labels = c("Smooth", "Rough")) +
-  labs(x = "Maximum Width (µm)", y = "Residuals as a % Difference", title = "Volume Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of volume residuals are controlled by $\\textbf{roughness}."))
+  labs(x = "Maximum Width (µm)", y = "Residuals as a % Difference") #, title = "Volume Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of volume residuals are controlled by $\\textbf{roughness}.")
 ```
 
 

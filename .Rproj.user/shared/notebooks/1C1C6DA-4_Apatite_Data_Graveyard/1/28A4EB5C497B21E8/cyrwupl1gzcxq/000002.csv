@@ -1,9 +1,0 @@
-"0","apatite %>%"
-"0","  filter(gem.geo == ""C"") %>%"
-"0","ggplot(aes(j.w1, percent.diff, color = ri, )) +"
-"0","  scale_color_manual(values = cb3) +"
-"0","  geom_point() +"
-"0","  geom_abline(slope = 0, intercept = 0) +"
-"0","  labs(x = ""Max Width"", y = ""Residuals as % Difference"", title = ""Ft Residuals as % difference, C grains, Roughness"")"
-"2","Error in is_reference(x, quote(expr = )) : object 'cb3' not found
-"

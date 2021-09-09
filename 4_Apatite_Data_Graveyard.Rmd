@@ -24,7 +24,7 @@ res_plotting %>%
 ```{r}
 apatite %>%
   filter(gem.geo == "C") %>%
-ggplot(aes(j.w1, percent.diff, color = ri)) +
+ggplot(aes(j.w1, percent.diff, color = ri, )) +
   scale_color_manual(values = cb3) +
   geom_point() +
   geom_abline(slope = 0, intercept = 0) +
