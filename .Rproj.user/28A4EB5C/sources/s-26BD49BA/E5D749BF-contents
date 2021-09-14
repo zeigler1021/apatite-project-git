@@ -1,0 +1,669 @@
+---
+title: "Apatite Data_Stats"
+author: "Spencer  Zeigler"
+date: "6/15/2021"
+output: html_document
+editor_options:
+  chunk_output_type: console
+---
+
+Notes: 
+* All 'termination end' grains have been removed
+* All terminations have been set to Np = 2 so that our 2D calculations assume ejection through those surfaces, just like they do for Blob3D 
+* The intercept is being forced through 0 for these regressions 
+
+Workflow: 
+* Compute regressions for all parameters of interest (in this case, all GEM values)
+* Double check slope uncertainties (by manually calculating a p-value) to confirm that A and B grains are hexagonal and  distinct from ellipsoid C grains within a ~90% confidence
+* Determine value of the slope by bootstrapping the regression (2D ~ 0 + 3D)
+* Determine the uncertainty on the correction by analyzing the residuals calculated from the mean of the bootstrapped slopes (ie. the correction). The residuals are calculated and then turned into a percent difference using the residual and the actual value. This normalizes the residuals. 
+* At the end we have a correction (slope) ± uncertainty (normalized residuals)
+
+Wow! Years of work to end up with two frickin' numbers. God damn. 
+
+Hard to believe. 
+
+## Bootstrapping
+ Goal: compute results for all GEM values
+ # Nested Dataframe REQUIRED for all linear regressions below: 
+```{r}
+# Created nested dataframe.
+
+sample_df <- apatite %>% 
+  select(gem, gc, geo, db.ft, s.ft, db.v, s.v, s.esr.ft, db.esr.ft) %>% 
+  pivot_longer(1:3, values_to = "grouping") %>% 
+  group_by(name, grouping) %>% 
+  nest()
+```
+
+# Nested Bootstrapped Linear Regression:
+## Forcing the Intercept Through 0
+This code chunk creates the results (ie. mean slope, mean std.err, plot slope) & creates vectors of bootstrapped slopes for all categories
+
+```{r}
+# Use 'map' to apply function over a list of dataframes (ie. the nested df above). 
+param <-  "esr" 
+#MUST CHANGE THIS FOR EACH PARAMETER YOU WANT TO RUN #ie. "ft", "volume", "esr"
+
+results_boot <- pmap(list(sample_df[[3]], 
+                           glue("{param}")), 
+                     bootstrap.linreg.nest)
+
+# Convert the lists of lists spit out by 'map' into a dataframe that is pretty & in the correct order. 
+# Separate slopes from other results
+results_flat <- flatten(results_boot) 
+results_boot <- results_flat[seq(1, length(results_flat), 3)]
+slopes_boot <- results_flat[seq(2, length(results_flat), 3)]
+residuals_og <- results_flat[seq(3, length(results_flat), 3)]
+
+# results --> tidy dataframe
+results_boot_df <- data.frame(matrix(unlist(results_boot), nrow = 11, byrow = T))  %>% 
+  rename(slope = X1, std.err = X2, plot.slope = X3) %>%
+  bind_cols(sample_df[,2]) %>%
+  relocate(grouping, .before = slope) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid"))) %>%
+  arrange(grouping)
+
+#Save results to named dataframe 
+assign(paste("results_boot", glue("{param}"), sep =  "_"), results_boot_df)
+
+# slopes --> tidy dataframe
+# To calculate an uncertainty on the correction, a vector of all 1001 slopes split out by the bootstrapping procedure is saved into its own file.
+slopes_boot_df <- data.frame(matrix(unlist(slopes_boot), nrow = 1001, byrow = FALSE)) %>%
+  rename(B2 = X1, B = X2, hexagonal = X3, A1 = X4, A = X5, B1 = X6, A2 = X7, C2 = X8, C = X9, ellipsoid = X10, C1 = X11) %>%
+  tibble() %>%
+  select("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid")
+
+#Save results to named dataframe 
+assign(paste("slopes_boot", glue("{param}"), sep =  "_"), slopes_boot_df)
+```
+
+Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
+```{r}
+filename <- "Regression Results_Final.xlsx"
+
+###### Bootstrapped results,intercept fixed at zero
+xlsx::write.xlsx(as.data.frame(results_boot_ft), file = glue("{filename}"), sheetName="results_boot_ft", append = TRUE, row.names=FALSE)
+
+xlsx::write.xlsx(as.data.frame(results_boot_volume), file = glue("{filename}"), sheetName= "results_boot_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_boot_esr), file=glue("{filename}"), sheetName="results_boot_esr", row.names=FALSE, append = TRUE)
+
+###### Slopes, bootstrapped, intercept fixed at zero
+xlsx::write.xlsx(as.data.frame(slopes_boot_ft), file=glue("{filename}"), sheetName="slopes_boot_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(slopes_boot_volume), file=glue("{filename}"), sheetName="slopes_boot_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(slopes_boot_esr), file=glue("{filename}"), sheetName="slopes_boot_esr", row.names=FALSE, append = TRUE)
+```
+
+Result: 
+```{r bootstrap_gem_ft, fig.cap = "Table of regression slopes for each GEM value"}
+#Ft
+kable(results_boot_ft %>% 
+  select(grouping, slope) %>% 
+  pivot_longer(cols = grouping) %>% 
+  select(-name) %>% 
+  pivot_wider(names_from = value, values_from = slope))
+```
+
+```{r bootstrap_gem_ft, fig.cap = "Table of regression slopes for each GEM value"}
+#Volume
+kable(results_boot_volume %>% 
+  select(grouping, slope) %>% 
+  pivot_longer(cols = grouping) %>% 
+  select(-name) %>% 
+  pivot_wider(names_from = value, values_from = slope))
+```
+
+```{r bootstrap_gem_ft, fig.cap = "Table of regression slopes for each GEM value"}
+#Rs
+kable(results_boot_esr %>% 
+  select(grouping, slope) %>% 
+  pivot_longer(cols = grouping) %>% 
+  select(-name) %>% 
+  pivot_wider(names_from = value, values_from = slope))
+```
+
+
+## p-values 
+Goal: compute p-values for all combinations of GEM values and determine which categories are significantly different or not. 
+
+Groupings of interest for comparison:
+```{r groupings}
+grouping_gem <- c("A1", "A2", "A", "B1", "B2", "B", "C1", "C2", "C")
+grouping_geo <- c("hexagonal", "ellipsoid")
+```
+
+```{r}
+# Must run this code twice. Once with all the suffixes on grouping and params = gem and once with it = geo.
+
+grouping <- grouping_gem
+params_ft <- "ft_gem"
+params_vol <- "volume_gem"
+#params_esr <- "esr_geo"
+
+manual.pvalue(slopes_boot_ft, 
+              glue("{grouping}"), 
+              glue("{params_ft}"), 
+              0.90, 0.1) 
+
+
+manual.pvalue(slopes_boot_volume, 
+              glue("{grouping}"), 
+              glue("{params_vol}"), 
+              0.90, 0.1) 
+
+
+# manual.pvalue(slopes_boot_esr, 
+#               glue("{grouping}"), 
+#               glue("{params_esr}"), 
+#               0.90, 0.1) 
+
+
+####To compare tet to normal 
+sum(slope_boot_tet_ft$C > slope_boot_normal_ft$C)/1001
+
+```
+
+Result: A and B grains are not significantly different (p < 0.9). C grains are significantly different (p > 0.99)
+```{r, echo=FALSE}
+#Ft
+kable(pvalue_ft_gem %>% 
+        rename(`p-value` = pvalue) %>% 
+        unite("GEM Compare", var1:var2, sep = " vs. ") %>% 
+        relocate(`GEM Compare`, .before = `p-value`))
+
+
+p.gem <- ggplot(pvalue_ft_gem, aes(x = var1, y = var2, fill = discrete)) + 
+    geom_tile(color = "black") +
+    theme_bw() +
+    theme(axis.title = element_blank()) +
+  theme(legend.position = "none") +
+    geom_text(aes(label = round(pvalue,2)), size = 3, color = "black") +
+    scale_fill_manual(values = tf_color,
+                      breaks = c("Slopes are diff", "Slopes are same", "NA"),
+                      labels = c("Slopes are different", "Slopes are same", "NA"), 
+                      name = "Legend") 
+
+p.geo <- ggplot(pvalue_ft_geo, aes(x = var1, y = var2, fill = discrete)) + 
+    geom_tile(color = "black") +
+    theme_bw() +
+    theme(axis.title = element_blank()) +
+  
+    geom_text(aes(label = round(pvalue,2)), size = 3, color = "black") +
+    scale_fill_manual(values = tf_color,
+                      breaks = c("Slopes are diff", "Slopes are same", "NA"),
+                      labels = c("Slopes are different", "Slopes are same", "NA"), 
+                      name = "Legend") 
+
+
+p.gem + p.geo + patchwork::plot_annotation(title = "Are the slopes of the regression for\neach GEM category significantly different or not? ", subtitle = "Ft Slopes at 90% Confidence")
+```
+
+```{r, echo = FALSE}
+#Volume
+kable(pvalue_volume_gem %>% 
+        rename(`p-value` = pvalue) %>% 
+        unite("GEM Compare", var1:var2, sep = " vs. ") %>% 
+        relocate(`GEM Compare`, .before = `p-value`))
+
+p.gem <- ggplot(pvalue_volume_gem, aes(x = var1, y = var2, fill = discrete)) + 
+    geom_tile(color = "black") +
+    theme_bw() +
+    theme(axis.title = element_blank()) +
+    theme(legend.position = "none") +
+    geom_text(aes(label = round(pvalue,2)), size = 3, color = "black") +
+    scale_fill_manual(values = tf_color,
+                      breaks = c("Slopes are diff", "Slopes are same", "NA"),
+                      labels = c("Slopes are different", "Slopes are same", "NA"), 
+                      name = "Legend") 
+
+p.geo <- ggplot(pvalue_volume_geo, aes(x = var1, y = var2, fill = discrete)) + 
+    geom_tile(color = "black") +
+    theme_bw() +
+    theme(axis.title = element_blank()) +
+    geom_text(aes(label = round(pvalue,2)), size = 3, color = "black") +
+    scale_fill_manual(values = tf_color,
+                      breaks = c("Slopes are diff", "Slopes are same", "NA"),
+                      labels = c("Slopes are different", "Slopes are same", "NA"), 
+                      name = "Legend") 
+p.gem + p.geo + patchwork::plot_annotation(title = "Are the slopes of the regression for\neach GEM category significantly different or not? ", subtitle = "Volume Slopes at 90% Confidence")
+
+```
+
+```{r, echo = FALSE}
+#Rs
+kable(pvalue_esr_gem %>% 
+        rename(`p-value` = pvalue) %>% 
+        unite("GEM Compare", var1:var2, sep = " vs. ") %>% 
+        relocate(`GEM Compare`, .before = `p-value`))
+
+p.gem <- ggplot(pvalue_esr_gem, aes(x = var1, y = var2, fill = discrete)) + 
+    geom_tile(color = "black") +
+    theme_bw() +
+    theme(axis.title = element_blank()) +
+  theme(legend.position = "none") +
+    geom_text(aes(label = round(pvalue,2)), size = 3, color = "black") +
+    scale_fill_manual(values = tf_color,
+                      breaks = c("Slopes are diff", "Slopes are same", "NA"),
+                      labels = c("Slopes are different", "Slopes are same", "NA"), 
+                      name = "Legend") 
+
+p.geo <- ggplot(pvalue_esr_geo, aes(x = var1, y = var2, fill = discrete)) + 
+    geom_tile(color = "black") +
+    theme_bw() +
+    theme(axis.title = element_blank()) +
+  
+    geom_text(aes(label = round(pvalue,2)), size = 3, color = "black") +
+    scale_fill_manual(values = tf_color,
+                      breaks = c("Slopes are diff", "Slopes are same", "NA"),
+                      labels = c("Slopes are\ndifferent", "Slopes are same", "NA"), 
+                      name = "Legend") 
+
+p.gem + p.geo + patchwork::plot_annotation(title = "Are the slopes of the regression for\neach GEM category significantly different or not? ", subtitle = "Rs Slopes at 90% Confidence")
+```
+
+
+## Bootstrapping 
+Goal: get the correction values we care about. We want a correction for all A & B grains (hexagonal) and a correction for all C grains (ellipsoid)
+```{r}
+#Must run this code 3 times. Once for "ft", "volume" "esr". Change it at "parameter". 
+parameter <- "ft"
+
+#Hexagonal Grains 
+hex <- filter(apatite, gc == "A" | gc == "B")
+bootstrap.linreg(hex, parameter, "hex")
+
+#Ellipsoid Grains
+ellip <- filter(apatite, gc == "C")
+bootstrap.linreg(ellip, parameter, "ellip")
+
+```
+
+Result: 
+```{r}
+#Ft
+kable(bind_rows(select(hex_results_ft, slope), select(ellip_results_ft,slope)) %>% bind_cols(c("Hexagonal", "Ellipsoid")) %>% rename(Geometry = ...2, Slope = slope) %>% relocate(Geometry), caption = "The correction (ie. slope of the regression) for each geometry subset for Ft. Hexagonal = A & B grains, Ellipsoid = C grains.")
+#Volume
+kable(bind_rows(select(hex_results_volume, slope), select(ellip_results_volume,slope)) %>% bind_cols(c("Hexagonal", "Ellipsoid")) %>% rename(Geometry = ...2, Slope = slope) %>% relocate(Geometry), caption = "The correction (ie. slope of the regression) for each geometry subset for Volume. Hexagonal = A & B grains, Ellipsoid = C grains.")
+#Rs
+kable(bind_rows(select(hex_results_esr, slope), select(ellip_results_esr,slope)) %>% bind_cols(c("Hexagonal", "Ellipsoid")) %>% rename(Geometry = ...2, Slope = slope) %>% relocate(Geometry), caption = "The correction (ie. slope of the regression) for each geometry subset for Rs. Hexagonal = A & B grains, Ellipsoid = C grains.")
+```
+
+## Uncertainties
+Goal A: determine if there are parameters that control the uncertainty on the regression. We will analyze two parameters: roughness and size. Only for hexagonal grains. The C category is too small to split into further categories (n=37) so the uncertainty will be flat. 
+
+```{r}
+#Ft Hexagonal
+residual.uncertainty("ft", "hex")
+#Volume Hexagonal
+residual.uncertainty("volume", "hex")
+#Rs Hexagonal
+#residual.uncertainty("esr", "hex")
+```
+
+Results:
+```{r}
+#Ft Hexagonal
+plots_hex_ft[[1]] + plots_hex_ft[[2]] + plot_annotation(title = "Residuals for Hexagonal Grains for Ft", subtitle = "Is there a pattern within roughness or size?")
+ 
+kable(table_hex_ft[[1]])
+kable(table_hex_ft[[2]])
+
+#Volume Hexagonal
+plots_hex_volume[[1]] + plots_hex_volume[[2]] + plot_annotation(title = "Residuals for Hexagonal Grains for Volume", subtitle = "Is there a pattern within roughness or size?")
+ 
+kable(table_hex_volume[[1]])
+kable(table_hex_volume[[2]])
+
+#ESR Hexagonal
+# plots_hex_esr[[1]] + plots_hex_esr[[2]] + plot_annotation(title = "Residuals for Hexagonal Grains for Rs", subtitle = "Is there a pattern within roughness or size?")
+#  
+# kable(table_hex_esr[[1]])
+# kable(table_hex_esr[[2]])
+```
+Our final results indicate that for Ft and Rs, there is a pattern with regard to size and for volume, there is a pattern with regards to roughness. Therefore, our final results reflect this. The uncertainties on the correction are controlled by roughness or size. 
+
+Goal B: determine the uncertainty on the correction using the residuals from the linear regression and split by controlling parameter (ie. for volume, roughness. for Ft/Rs, size). 
+```{r}
+kable(table_hex_ft[[2]], caption = "Uncertainty on Ft correction split by size category for hexagonal grains.")
+kable(table_hex_volume[[1]], caption = "Uncertainty on Volume correction split by grain roughness.")
+kable(table_hex_esr[[2]], caption = "Uncertainty on Rs correction split by size category.")
+
+#Ellipsoid results
+residual.uncertainty("ft", "ellip")
+residual.uncertainty("volume", "ellip")
+residual.uncertainty("esr", "ellip")
+
+kable(bind_cols(c(sd(uncert_result_ellip_ft$percent_diff), sd(uncert_result_ellip_volume$percent_diff), sd(uncert_result_ellip_esr$percent_diff)), c("Ft", "Volume", "Rs")) %>% rename(Uncertainty = ...1, Parameter = ...2) %>% relocate(Parameter, .before = Uncertainty), caption = "Uncertainty on corrections for ellipsoid grains. Due to small sample number (N=37), these uncertainties are not controlled by a parameter like roughness or size.")
+```
+
+
+Results: 
+```{r}
+#Print a table that shows the influence of secondary parameters
+#Print a table that shows the final results 
+```
+
+## Results! 
+Goal: we have corrected for the geometric uncertainty for Ft, volume (eU), and Rs! 
+```{r}
+#print corrections and results and celebrate good times come on
+```
+
+
+
+
+
+
+
+
+
+
+
+
+# Bootstrap p-value comparison code: 
+
+Groupings of interest for comparison:
+```{r}
+grouping_gem <- c("A1", "A2", "A", "B1", "B2", "B", "C1", "C2", "C")
+grouping_geo <- c("hexagonal", "ellipsoid")
+# grouping_ri <- c("1", "2")
+# grouping_term <- c("term0", "term1", "term2")
+# grouping_size <- c("rare- small", "common", "rare- large")
+# grouping_all <- c("A1", "A2", "A", "B1", "B2", "B", "C1", "C2", "C", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large")
+```
+
+Calculate p-value to compare GEM against each other:
+```{r}
+################ 90% +/- a few percent...
+params <- "esr_gem"
+grouping <- grouping_gem
+
+manual.pvalue(slopes_boot_esr, 
+              glue("{grouping}"), 
+              glue("{params}"), 
+              0.90, 0.1) 
+
+```
+
+Uncertainty 
+```{r}
+# Ft
+#hex_noterm <- no.term.ends %>% filter(geo == "hexagonal")
+#residual.uncertainty(hex_noterm, "ft", "hexagonal")
+#ggplotly(p, tooltip = c("key"))
+
+residual.uncertainty(hex, "ft", "hexagonal")
+residual.uncertainty(ellip, "ft", "ellipsoid")
+
+# Volume
+residual.uncertainty(hex, "volume", "hexagonal")
+residual.uncertainty(ellip, "volume", "ellipsoid")
+
+
+# ESR
+residual.uncertainty(hex, "esr", "hexagonal")
+residual.uncertainty(ellip, "esr", "ellipsoid")
+```
+
+
+
+
+
+################################################################################
+Bootstrapping Code 
+
+# Nested Dataframe REQUIRED for all linear regressions below: 
+```{r}
+# Created nested dataframe. Can add parameters here, just change the "11" in "nrow" when compiling results into a dataframe. 
+
+sample_df <- apatite %>% 
+  select(gem, gc, ri, geo, size.cat, db.ft, s.ft, db.v, s.v, s.esr.ft, db.esr.ft) %>% 
+  pivot_longer(1:5, values_to = "grouping") %>% 
+  group_by(name, grouping) %>% 
+  nest()
+```
+
+# Nested Bootstrapped Linear Regression:
+## Forcing the Intercept Through 0
+This code chunk creates the results (ie. mean slope, mean std.err, plot slope) & creates vectors of bootstrapped slopes for all categories
+
+```{r}
+# Use 'map' to apply function over a list of dataframes (ie. the nested df above). 
+param <-  "volume" 
+#MUST CHANGE THIS FOR EACH PARAMETER YOU WANT TO RUN #ie. "ft", "volume", "esr"
+
+results_boot <- pmap(list(sample_df[[3]], 
+                           glue("{param}")), 
+                     bootstrap.linreg.nest)
+
+# Convert the lists of lists spit out by 'map' into a dataframe that is pretty & in the correct order. 
+# Separate slopes from other results
+results_flat <- flatten(results_boot) 
+results_boot <- results_flat[seq(1, length(results_flat), 3)]
+slopes_boot <- results_flat[seq(2, length(results_flat), 3)]
+residuals_og <- results_flat[seq(3, length(results_flat), 3)]
+
+# results --> tidy dataframe
+results_boot_df <- data.frame(matrix(unlist(results_boot), nrow = 16, byrow = T))  %>% 
+  rename(slope = X1, std.err = X2, plot.slope = X3) %>%
+  bind_cols(sample_df[,2]) %>%
+  relocate(grouping, .before = slope) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "rare- small", "common", "rare- large"))) %>%
+  #mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "hexagonal", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) %>%
+  arrange(grouping)
+
+#Save results to named dataframe 
+assign(paste("results_boot_noterm", glue("{param}"), sep =  "_"), results_boot_df)
+
+# slopes --> tidy dataframe
+# To calculate an uncertainty on the correction, a vector of all 1001 slopes split out by the bootstrapping procedure is saved into its own file.
+slopes_boot_df <- data.frame(matrix(unlist(slopes_boot), nrow = 1001, byrow = FALSE)) %>%
+  rename(B2 = X1, B = X2, `2` = X3, hexagonal = X4, `rare- small` = X5, A1 = X6, A = X7, `1` = X8, B1 = X9, A2 = X10, common = X11, C2 = X12, C = X13, ellipsoid = X14, C1 = X15, `rare- large` = X16) %>%
+  tibble() %>%
+  select("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "rare- small", "common", "rare- large")
+
+#Save results to named dataframe 
+assign(paste("slopes_boot_noterm", glue("{param}"), sep =  "_"), slopes_boot_df)
+```
+
+Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
+```{r}
+filename <- "Regression Results_Final.xlsx"
+
+###### Bootstrapped results,intercept fixed at zero
+xlsx::write.xlsx(as.data.frame(results_boot_ft), file = glue("{filename}"), sheetName="results_boot_ft", append = TRUE, row.names=FALSE)
+
+xlsx::write.xlsx(as.data.frame(results_boot_volume), file = glue("{filename}"), sheetName= "results_boot_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_boot_esr), file=glue("{filename}"), sheetName="results_boot_esr", row.names=FALSE, append = TRUE)
+
+###### Slopes, bootstrapped, intercept fixed at zero
+xlsx::write.xlsx(as.data.frame(slopes_boot_ft), file=glue("{filename}"), sheetName="slopes_boot_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(slopes_boot_volume), file=glue("{filename}"), sheetName="slopes_boot_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(slopes_boot_esr), file=glue("{filename}"), sheetName="slopes_boot_esr", row.names=FALSE, append = TRUE)
+```
+
+
+
+######### INTERCEPT NOT FORCED THROUGH ZERO 
+
+# Nested Bootstrapped Linear Regression:
+## NOT Forcing the Intercept Through 0
+This code chunk creates the results (ie. mean slope, mean std.err, plot slope) and creates vectors of bootstrapped intercepts for all categories
+```{r}
+param <- "volume" #MUST CHANGE THIS FOR EACH PARAMETER YOU WANT TO RUN #ie. "ft", "volume", "esr"
+
+results_nf_boot <- pmap(list(sample_df[[3]], 
+                          glue("{param}")), 
+                     bootstrap.linreg.nest.not.fixed)
+
+# Convert the lists of lists spit out by 'map' into a dataframe that is pretty & in the correct order. 
+# Separate slopes from other results
+results_nf_flat <- flatten(results_nf_boot) 
+results_nf_boot <- results_nf_flat[seq(1, length(results_nf_flat), 3)]
+intercepts_boot <- results_nf_flat[seq(2, length(results_nf_flat), 3)]
+slopes_nf_boot <- results_nf_flat[seq(3, length(results_nf_flat), 3)]
+  
+results_nf_boot_df <- data.frame(matrix(unlist(results_nf_boot), nrow = 16, byrow = T)) %>%
+  rename(slope = X1, intercept = X2, std.err = X3, plot.slope = X4, lower.conf.intercept = X5, upper.conf.intercept = X6) %>%
+  bind_cols(sample_df[,2]) %>%
+  relocate(grouping, .before = slope.mean) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) %>%
+  arrange(grouping)
+
+#Save results to named dataframe 
+assign(paste("results_nf_boot", glue("{param}"), sep =  "_"), results_nf_boot_df)
+
+# intercepts --> tidy dataframe
+# To calculate an uncertainty on the correction, a vector of all 1001 intercepts split out by the bootstrapping procedure is saved into its own file.
+
+intercepts_boot_df <- data.frame(matrix(unlist(intercepts_boot), nrow = 1001, byrow = FALSE)) %>%
+  rename(C2 = X1, C = X2, `2` = X3, term1 = X4, ellipsoid = X5, common = X6, term0 = X7, C1 = X8, `1` = X9, term2 = X10, `rare- large` = X11, B2 = X12, B = X13, hexagonal = X14, B1 = X15, A2 = X16, A = X17, A1 = X18, `rare- small` = X19) %>%
+  tibble() %>%
+  select("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large")
+
+#Save results to named dataframe 
+assign(paste("intercepts_boot", glue("{param}"), sep =  "_"), intercepts_boot_df)
+
+# slopes --> tidy dataframe
+# To calculate an uncertainty on the correction, a vector of all 1001 slopes split out by the bootstrapping procedure is saved into its own file.
+
+slopes_nf_boot_df <- data.frame(matrix(unlist(slopes_nf_boot), nrow = 1001, byrow = FALSE)) %>%
+  rename(C2 = X1, C = X2, `2` = X3, term1 = X4, ellipsoid = X5, common = X6, term0 = X7, C1 = X8, `1` = X9, term2 = X10, `rare- large` = X11, B2 = X12, B = X13, hexagonal = X14, B1 = X15, A2 = X16, A = X17, A1 = X18, `rare- small` = X19) %>%
+  tibble() %>%
+  select("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large")
+
+#Save results to named dataframe 
+assign(paste("slopes_nf_boot", glue("{param}"), sep =  "_"), slopes_nf_boot_df)
+```
+
+Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
+```{r}
+##### Bootstrapped results,intercept not fixed at zero
+
+xlsx::write.xlsx(as.data.frame(results_nf_boot_ft), file="Regression Results_Final.xlsx", sheetName="results_nf_boot_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_nf_boot_volume), file="Regression Results_Final.xlsx", sheetName="results_nf_boot_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_nf_boot_esr), file="Regression Results_Final.xlsx", sheetName="results_nf_boot_esr", row.names=FALSE, append = TRUE)
+
+###### Intercepts, bootstrapped, intercept not fixed at zero
+
+xlsx::write.xlsx(as.data.frame(intercepts_boot_ft), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(intercepts_boot_volume), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(intercepts_boot_esr), file="Regression Results_Final.xlsx", sheetName="intercepts_boot_esr", row.names=FALSE, append = TRUE)
+
+###### Slopes, bootstrapped, intercept not fixed at zero
+
+xlsx::write.xlsx(as.data.frame(slopes_nf_boot_ft), file="Regression Results_Final.xlsx", sheetName="slopes_nf_boot_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(slopes_nf_boot_volume), file="Regression Results_Final.xlsx", sheetName="slopes_nf_boot_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(slopes_nf_boot_esr), file="Regression Results_Final.xlsx", sheetName="slopes_nf_boot_esr", row.names=FALSE, append = TRUE)
+```
+
+
+################################################################################
+Taylor Code 
+
+# Taylor Linear Regression:
+## Forcing the Intercept Through 0
+This code chunk creates the results (ie. slope, sigma slope, plot slope)
+```{r}
+param <- "esr"
+
+results_taylor <- pmap(list(sample_df[[3]], 
+                            glue("{param}")), 
+                       taylor.uncertainty)
+
+results_taylor_df <- data.frame(matrix(unlist(results_taylor), nrow = 19, byrow = TRUE)) %>%
+  rename(slope = X1, sigma.slope = X2, plot.slope = X3) %>%
+  bind_cols(sample_df[,2], sample_df[,1]) %>%
+  relocate(grouping, name, .before = slope) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) %>%
+  arrange(grouping)
+
+#Save results to named dataframe 
+assign(paste("results_taylor", glue("{param}"), sep =  "_"), results_taylor_df)
+```
+
+Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
+```{r}
+filename <- "Regression Results_Final.xlsx"
+#glue("{filename}")
+###### Taylor results, intercept fixed at zero
+
+xlsx::write.xlsx(as.data.frame(results_taylor_ft), file= glue("{filename}"), sheetName="results_taylor_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_taylor_volume), file = glue("{filename}"), sheetName="results_taylor_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_taylor_esr), file = glue("{filename}"), sheetName="results_taylor_esr", row.names=FALSE, append = TRUE)
+```
+
+# Taylor Linear Regression:
+## NOT Forcing the Intercept Through 0
+This code chunk creates the results (ie. slope, intercept, sigma slope, sigma intercept...)
+```{r}
+param <- "esr"
+results_nf_taylor <- pmap(list(sample_df[[3]], 
+                            glue("{param}")), 
+                       taylor.uncertainty.not.fixed)
+
+results_nf_taylor_df <- data.frame(matrix(unlist(results_nf_taylor), nrow = 19, byrow = TRUE)) %>%
+  rename(slope = X1, sigma.slope = X2, intercept = X3, sigma.intercept =X4, plot.slope = X5) %>%
+  bind_cols(sample_df[,2], sample_df[,1]) %>%
+  relocate(grouping, name, .before = slope) %>%
+  tibble() %>%
+  mutate(grouping = factor(grouping, levels = c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"))) %>%
+  arrange(grouping)
+
+#Save results to named dataframe 
+assign(paste("results_nf_taylor", glue("{param}"), sep =  "_"), results_nf_taylor_df)
+```
+
+Save all the outputs you just made to excel files so you don't have to run this slow-ass code again. 
+```{r}
+filename <- "Regression Results_Final.xlsx"
+
+###### Taylor results,intercept not fixed at zero
+
+xlsx::write.xlsx(as.data.frame(results_nf_taylor_ft), file =  glue("{filename}"), sheetName="results_nf_taylor_ft", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_nf_taylor_volume), file =  glue("{filename}"), sheetName="results_nf_taylor_volume", row.names=FALSE, append = TRUE)
+
+xlsx::write.xlsx(as.data.frame(results_nf_taylor_esr), file = glue("{filename}"), sheetName="results_nf_taylor_esr", row.names=FALSE, append = TRUE)
+```
+
+Eventually, the code to compare Taylor results easily to see if they overlap within 1sigma will exist: 
+
+# Slope compare:
+```{r}
+params <- "volume_gem"
+grouping <- grouping_gem
+
+taylor.overlap(results_taylor_volume, 
+               glue("{grouping}"), 
+               glue("{params}"))
+```
+
+# Intercept compare:
+
+
+
+
+
+
+
+
+
