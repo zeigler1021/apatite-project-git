@@ -41,17 +41,18 @@ bootstrap.linreg <- function(df, param, df_name) {
                                    coef_inf)
   
   #Store residuals for each bootstrapped sample
-  res <- matrix(nrow = nrow(df), ncol = 1001)
-
-  for (i in 1:1001) {
-    res[,i] <- unname(sample_coefs[[3]][[i]]$residuals)
-    assign(paste(glue("{df_name}"), "residuals", glue("{param}"), sep = "_"), res, envir = parent.frame())
-  }
+  # res <- matrix(nrow = nrow(df), ncol = 1001)
+  # 
+  # for (i in 1:1001) {
+  #   res[,i] <- unname(sample_coefs[[3]][[i]]$residuals)
+  #   assign(paste(glue("{df_name}"), "residuals", glue("{param}"), sep = "_"), res, envir = parent.frame())
+  # }
 
   #Store results
-  results_boot <<- as.data.frame(cbind(percentile_intervals$.estimate, mean(sample_coefs$std.error), (1/percentile_intervals$.estimate))) %>%
+  results_boot <- as.data.frame(cbind(mean(sample_coefs$estimate), mean(sample_coefs$std.error), (1/percentile_intervals$.estimate))) %>%
     rename(slope = V1, std.error = V2, plot.slope= V3)
   
+  assign(paste(glue("{df_name}"), "results", glue("{param}"), sep = "_"), results_boot, envir = parent.frame())
   assign(paste(glue("{df_name}"), "slopes", glue("{param}"), sep = "_"), sample_coefs$estimate, envir = parent.frame())
   
   print(results_boot)

@@ -9,15 +9,11 @@ manual.pvalue <- function (df, grouping, param, upper, lower, intercept_info = "
   
   #Iterate over every combination of grouping value and calculate a p-value
   pvalue <- list()
-  # for (i in 1:nrow(grid_df)) {
-  #   pvalue[i] <- sum(grid_df$var1[[i]] > grid_df$var2[[i]])/1000
-  # }
+ 
   for (i in 1:nrow(grid_df)) {
     pvalue[i] <- sum(grid_df$var1[[i]] > grid_df$var2[[i]])/1001 
   }
   pvalue <- unlist(pvalue)
-  #pvalue <- ifelse(pvalue >= 1, pvalue - 1, pvalue) #correct the pvalues to always be < 1. p values > 1 result from this being a 1 tailed test applied to 2 tailed data. 
-  #pvalue <- 2 *pvalue #two tailed test
   
   grouping <- grouping
   grouping_grid <- suppressMessages(expand_grid(grouping, grouping, .name_repair = "unique") %>%
@@ -26,24 +22,25 @@ manual.pvalue <- function (df, grouping, param, upper, lower, intercept_info = "
   pvalue <- cbind(pvalue, grouping_grid) #combine pvalue and grouping variable
   
   assign(paste("pvalue", glue("{param}"), sep = "_"), pvalue, envir = parent.frame()) #save results
-  print(head(pvalue))
   
   pvalue_df <- pvalue %>%
     mutate(discrete = ifelse(pvalue >= glue({upper}) | pvalue <= glue({lower}), "Slopes are diff", "Slopes are same")) %>%
     mutate(discrete = ifelse(var1 == var2, "NA", discrete))
   
- intercept <- ifelse(intercept_info == "fixed", "intercept fixed at 0", "intercept not fixed")
+  assign(paste("pvalue", glue("{param}"), sep = "_"), pvalue_df, envir = parent.frame())
   
-  p <- ggplot(pvalue_df, aes(x = var1, y = var2, fill = discrete)) + 
-    geom_tile(color = "black") +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 40, vjust = 1, hjust=1)) +
-    theme(axis.title = element_blank()) +
-    geom_text(aes(label = round(pvalue,2)), size = 3, color = "black") +
-    scale_fill_manual(values = tf_color,
-                      breaks = c("Slopes are diff", "Slopes are same", "NA"),
-                      name = "Legend") +
-    labs(title = paste("Bootstrap Method:", glue("{params}"), sep = " "), subtitle = paste(glue("{upper}"), "confidence //", glue("{intercept}")))
+ # intercept <- ifelse(intercept_info == "fixed", "intercept fixed at 0", "intercept not fixed")
   
-  return(p)
+  # p <- ggplot(pvalue_df, aes(x = var1, y = var2, fill = discrete)) + 
+  #   geom_tile(color = "black") +
+  #   theme_bw() +
+  #   theme(axis.text.x = element_text(angle = 40, vjust = 1, hjust=1)) +
+  #   theme(axis.title = element_blank()) +
+  #   geom_text(aes(label = round(pvalue,2)), size = 3, color = "black") +
+  #   scale_fill_manual(values = tf_color,
+  #                     breaks = c("Slopes are diff", "Slopes are same", "NA"),
+  #                     name = "Legend") +
+  #   labs(title = paste("Bootstrap Method:", glue("{params}"), sep = " "), subtitle = paste(glue("{upper}"), "confidence //", glue("{intercept}")))
+  # 
+  # return(p)
 }

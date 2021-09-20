@@ -34,7 +34,7 @@ if (param == "esr") {
     unnest(coef_inf)
   
   #Get confidence interval 
-  #percentile_intervals <- int_pctl(sample_models,coef_inf)
+  percentile_intervals <- int_pctl(sample_models,coef_inf)
   
   #GET RESIDUALS
   residuals_og <- unname(sample_coefs[[3]][[1001]]$residuals)
