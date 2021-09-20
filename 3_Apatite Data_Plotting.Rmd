@@ -28,20 +28,29 @@ colorspace::swatchplot(tableau_color_pal("Color Blind"))
 colorspace::swatchplot(tf_color)
 ```
 
+
+
+```{r}
+library(ggExtra)
+ggplot(apatite, aes(x = db.ft, color = gem)) + 
+  geom_density(position = "identity")
+```
+
 Exploring Ft
 ```{r}
 color3 <- c("#004352", "#3fa38f", "#ef3e36")
-apatite %>%
+p <- apatite %>%
 ggplot(aes(x = s.ft, y = db.ft, color= gc)) + 
   geom_smooth(method= "lm", formula = y~0+x, se=F) +
   geom_point(size = 2, shape = 16) +
-  
+    coord_trans(x = 'log10', y = 'log10') +
   labs(x= "2D Ft", y= "3D Ft") + #, title = "Manual 2D vs. Nano-CT 3D Ft", subtitle = The slopes for A and B grains overlap, while C grains are distinct
   scale_color_manual(values = color3,
                       breaks = c("A", "B", "C"), 
                       name = "Legend") +
   theme_set(theme_classic()) +
-  #theme(legend.position = "none") +
+  theme(legend.position = "none") +
+
   geom_abline(slope=1, intercept = 0) + 
   geom_abline(slope=.95, intercept=0, size= .1, linetype= 2) + #5%
   geom_abline(slope=1.05263, intercept=0, size=.1, linetype= 2) + #5%
@@ -49,6 +58,48 @@ ggplot(aes(x = s.ft, y = db.ft, color= gc)) +
   geom_abline(slope=1.1111111, intercept=0, size=.1, linetype= 2) + #10%
   geom_abline(slope=.8, intercept=0, size=.1, linetype= 2) + #20%
   geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
+p
+
+ggplot(apatite, aes(x =  s.ft, y = db.ft)) +
+    scale_y_continuous(trans = 'log10')  +
+  scale_x_continuous(trans = 'log10')  +
+  geom_smooth(method= "lm", formula = y~0+x, se=F) +
+  geom_point() 
+
+ggplot(apatite, aes(x = s.v, y = db.v)) +
+  scale_y_continuous(trans = 'log10')  +
+  scale_x_continuous(trans = 'log10')  +
+  geom_smooth(method= "lm", formula = y~0+x, se=F) +
+  geom_point() 
+
+
+ ggMarginal(p, type = "density") 
+ 
+ #ggplot(apatite, aes(x = s.ft, y = db.ft)) +
+
+ library(ggridges)
+ 
+ftresid <- lm(s.ft ~ 0 + db.ft, hex)$residuals 
+  
+bind_cols(hex$size.cat, (ftresid / hex$s.ft) * 100) %>%
+  ggplot(aes(x = ...1, y = ...2)) +
+  geom_jitter(alpha = 0.5, width = 0.1, color = "lightblue") + 
+  geom_point(stat = "summary", fun.y = "mean") +
+  geom_errorbar(stat = "summary", fun.data = "mean_se", fun.args = list(mult = 1.96), width = 0) + 
+  geom_hline(yintercept = 0, size = .5, linetype = 2) +
+  labs(x = "Size Category", y = "Residuals", title = "The standard error of Ft residuals show a strong\nrelationship with size.")
+  #geom_density_ridges()
+
+
+
+
+
+volresid <- lm(s.v ~ 0 + db.v, apatite)$residuals
+bind_cols(apatite$size.cat, volresid) %>%
+  ggplot(aes(x = ...2, y = ...1)) +
+  geom_density_ridges(bins= 20)
+
+ftrsid 
 
 ```
 
