@@ -75,39 +75,31 @@ tf_color <- c("#ed6a5e", "#9ebc9e", "#553e4e")
 # Import Data
 Import master datasheet
 ```{r}
-apatite <- read_excel("./Data Comps_Final.xlsx", sheet="Data Comps") 
+apatite <- read_excel("./data/Data Comps_Final.xlsx", sheet="Data Comps") 
 apatite <- apatite[-c(42, 166, 217, 218, 244),] #delete termination end grains
 as_tibble(apatite)
+
+apatite <- apatite %>%
+  select(1:5, 7:8, 13, 16:30, 32, 43:48)
 ```
+
+Import main results datasheet
+```{r}
+apatite_main <- read_csv("./outputs/main_results_22102021.csv")
+```
+
 
 Setting cols as factor for plotting
 ```{r}
-apatite$size.bin <- factor(apatite$size.bin, levels = c("40-50", "51-60", "61-70", "71-80", "81-90", "91-100", "101-110", "111-120", "121-130", "131-140", "141-150", "151-160", "161-170"))
-
 apatite$gem <- factor(apatite$gem, levels = c("A1", "A2", "B1", "B2", "C1", "C2"))
-
 apatite$gc <- factor(apatite$gc, levels = c("A", "B", "C"))
 apatite$ri <- factor(apatite$ri, levels = c("1", "2"))
-
-apatite$size.name <- factor(apatite$size.name, levels=c("Small & Rare","Small & Common","Typical & Common", "Large & Common", "Large & Rare"))
-
 apatite$size.cat <- factor(apatite$size.cat, levels = c("rare- small", "common",  "rare- large"))
 
-groupings <- as.vector(c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"), mode = "character")
+#apatite$size.name <- factor(apatite$size.name, levels=c("Small & Rare","Small & Common","Typical & Common", "Large & Common", "Large & Rare"))
+#apatite$size.bin <- factor(apatite$size.bin, levels = c("40-50", "51-60", "61-70", "71-80", "81-90", "91-100", "101-110", "111-120", "121-130", "131-140", "141-150", "151-160", "161-170"))
+#groupings <- as.vector(c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"), mode = "character")
 ```
-
-Import Linear Regression Data
-```{r}
-# #get vector of sheet names
-# sheet_names <- excel_sheets("./Regression Results_Final.xlsx")
-# #import all sheets into a list
-# linreg_results <- lapply(sheet_names, function(x) read_excel(path = "./Regression Results_Final.xlsx", sheet = x))
-# #export each element of list as a dataframe
-# for (i in 1:20) {
-#   assign(paste(sheet_names[[i]]), linreg_results[[i]])
-# }
-```
-
 
 Making parameter based dataframes
 ```{r}
@@ -129,9 +121,6 @@ c1 <- apatite %>% filter(gem == "C1")
 c2 <- apatite %>% filter(gem == "C2")
 
 #Make dataframes based on geometry 
-hex <- apatite %>% filter(geo == "hexagonal")
-ellip <- apatite %>% filter(geo == "ellipsoid")
-
 hex <- apatite %>% filter(gc == "A" | gc == "B")
 ellip <- apatite %>% filter(gc == "C")
 
@@ -145,24 +134,14 @@ rare_large <- apatite %>% filter(size.cat == "rare- large")
 
 Statistics functions
 ```{r}
-source("./Functions/function_error_propagation.R")
-source("./Functions/function_bootstrapped_slopes.R")
-#source("function_linreg_slope_uncertainty.R")
-source("./Functions/function_model_diagnostics.R")
-#source("function_ttest_compare.R")
-source("./Functions/function_bootstrap_linreg_nested.R")
-source("./Functions/function_taylor_uncertainties_nested.R")
-source("./Functions/function_taylor_uncertainties_nested_notfixed.R")
-source("./Functions/function_bootstrap_linreg_nested_notfixed.R")
-source("./Functions/function_manual_pvalue.R")
-source("./Functions/function_taylor_overlap.R")
-source("./Functions/function_residual_uncertainty.R")
+source("./functions/function_bootstrapped_slopes.R")
+source("./functions/function_residual_sd_22102021.R")
 ```
 
 Plotting functions
 ```{r}
-#source("function_error_lines.R")
-#source("function_plot_results.R")
+
+source("./functions/function_plot_results.R")
 ```
 
 

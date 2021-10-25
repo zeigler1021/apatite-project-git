@@ -1,0 +1,136 @@
+---
+title: "week1_apatite"
+subtitle: 
+author: "Spencer  Zeigler"
+date: "Last knitted `r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document: 
+    df_print: paged
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+editor_options:
+  chunk_output_type: console # switch to 'inline' if preferred
+---
+# Setup
+
+```{r "setup", message = FALSE}
+# packages
+library(tidyverse) # general data wrangling and plotting
+library(readxl)
+library(magrittr)
+library(broom)
+library(ggthemes)
+library(ggtext)
+# scripts
+source("scripts/functions.R")
+# color
+color3 <- c("#004352", "#3fa38f", "#ef3e36")
+color <- c("#9a59e6", "#e03c81", "#db754e")
+
+
+
+
+# global knitting options for code rendering
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  dev = c("png", "pdf"),
+  dev.args = list(pdf = list(encoding = "WinAnsi", useDingbats = FALSE)),
+  fig.keep = "all",
+  fig.path = file.path("plots", paste0(gsub("\\.[Rr]md", "", knitr::current_input()), "_"))
+)
+```
+
+
+# Data Import and Cleaning
+```{r}
+apatite <- read_excel("./data/Data Comps_Final.xlsx") %>%
+  select(sample, gem, np, gc, ri, size.cat, j.w1, s.ft, db.ft, s.v, db.v, s.esr.ft, db.esr.ft)
+apatite <- apatite[-c(42, 166, 217, 218, 244),] #delete termination end grains
+as_tibble(apatite)
+  
+#Run linear regression for Ft data
+apatite.lm <- apatite %$%
+  lm(s.ft ~ 0 + db.ft) 
+#Combine results from lm into apatite dataframe
+apatite <- bind_cols(apatite, apatite.lm$residuals, apatite.lm$coefficients) %>%
+  rename(residuals_ft = ...14, slope_ft = ...15) %>%
+  mutate(percent_diff_ft = residuals_ft/s.ft * 100)
+
+#Run linear regression for volume data
+apatite.lm <- apatite %$%
+  lm(s.v ~ 0 + db.v) 
+#Combine results from lm into apatite dataframe
+apatite <- bind_cols(apatite, apatite.lm$residuals, apatite.lm$coefficients) %>%
+  rename(residuals_v = ...17, slope_v = ...18) %>%
+  mutate(percent_diff_vol = residuals_v/s.v * 100)
+#Run linear regression for rs data
+apatite.lm <- apatite %$%
+  lm(s.esr.ft ~ 0 + db.esr.ft) 
+#Combine results from lm into apatite dataframe
+apatite <- bind_cols(apatite, apatite.lm$residuals, apatite.lm$coefficients) %>%
+  rename(residuals_rs = ...20, slope_rs = ...21) %>% mutate(percent_diff_rs = residuals_rs/s.esr.ft * 100)
+
+```
+
+
+# Visualizing Corrections
+```{r "apatite_corrections", fig.width=8, fig.height=6}
+ggplot(apatite, aes(x = db.ft, y = s.ft, color = gc)) + 
+  geom_abline(slope = 1, intercept = 0) +
+  geom_smooth(method= "lm", formula = y~0+x, se = FALSE) +
+  geom_point(size = 2) + 
+  scale_color_manual(values = color3, 
+                     breaks = c("A", "B", "C"), 
+                     name = "Geometry") +
+  labs(title = "<span style='color:#3fa38f;'>Hexagonal</span> grains are well approximated by an idealized geometry<br>while <span style='color:#ef3e36;'>ellipsoid</span> grains are signficantly offset.",
+       subtitle = "Regressions for <span style='color:#004352;'>A</span> and <span style='color:#3fa38f;'>B</span> grains overlap and are combined into hexagonal.",
+    x= "Real Ft", 
+    y= "Manual Ft") + 
+  theme_light() +
+  theme(plot.title = element_markdown(lineheight = 1.2),
+        plot.title.position = "plot", 
+        plot.subtitle = element_markdown(lineheight = 1.2)) 
+```
+
+# Visualizing residuals version 1
+```{r}
+
+apatite %>%
+  filter(gc == "A" | gc == "B") %>%
+ggplot(aes(j.w1, percent_diff_ft, color = size.cat)) +
+  geom_hline(mapping=aes(yintercept = 0)) +
+  geom_point(shape = 16, size = 2) +
+  scale_color_manual(values = color, 
+                   name = "Legend", 
+                   breaks = c("rare- small", "common", "rare- large"),
+                   labels = c("Small\n(<50µm)\n", "Average\n(50-100µm)\n", "Large\n(>100µm)\n")) +
+  labs(x = "Maximum Width (µm)", y = "Residuals as a % Difference", title = "Ft Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of Ft residuals are controlled by $\\textbf{size}.")) +
+  theme_light()
+```
+
+# Visualizing residuals version 2
+```{r}
+apatite$size.cat <- factor(apatite$size.cat, levels = c("rare- small", "common",  "rare- large", labels = c("Small", "Average", "Large")))
+
+apatite %>%
+  filter(gc == "A" | gc == "B") %>%
+ ggplot(aes(x = size.cat, y = percent_diff_ft, color = size.cat)) +
+  scale_color_manual(values = color) +
+  geom_jitter(alpha = 0.5, width = 0.1) + 
+  geom_point(stat = "summary") +
+  geom_errorbar(stat = "summary", fun.data = "mean_se", fun.args = list(mult = 1.96), width = 0) + 
+  geom_hline(yintercept = 0, size = .5, linetype = 2) +
+  labs(x = "Size Category", y = "Residuals", title = "The standard error of Ft residuals show a strong\nrelationship with size.") +
+  scale_x_discrete(labels = c("Small", "Average", "Large")) +
+  theme_light()
+```
+
+
+
+
+
+
+

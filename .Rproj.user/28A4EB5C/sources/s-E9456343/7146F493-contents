@@ -1,0 +1,47 @@
+bootstrap.linreg <- function(df, param, df_name) {
+  
+  if (param == "ft") {
+    sample_df <- df %>% 
+      select(sample, gem, s.ft,  db.ft) %>% 
+      rename(twoD = s.ft, threeD = db.ft) 
+  
+  }
+  if (param == "volume") {
+    sample_df <- df %>% 
+      select(sample, gem, s.v,  db.v) %>% 
+      rename(twoD = s.v,  threeD = db.v)
+      
+  }
+  
+  if (param == "esr") {
+    sample_df <- df %>%
+      select(sample, gem, s.rs, db.rs) %>%
+      rename(twoD = s.rs, threeD = db.rs)
+  }
+  
+  # Set set.seed a starting number to generate a sequence of random numbers so that we can get reproducible results
+  set.seed(123)
+  #Perform bootstrap 
+  sample_boot <- bootstraps(sample_df,
+                            times = 10000,
+                            apparent = TRUE)
+  
+  #Run linear regression on each bootstrap
+  sample_models <- sample_boot %>% 
+    mutate(model = map(splits, ~ lm(twoD ~ 0 + threeD,
+                                    data = .) ),
+           coef_inf = map(model, tidy))
+  
+  #Get coefficients
+  sample_coefs <- sample_models %>% 
+    unnest(coef_inf)
+
+  #Store results
+  results_boot <- as.data.frame(cbind(mean(sample_coefs$estimate), mean(sample_coefs$std.error), (1/percentile_intervals$.estimate))) %>%
+    rename(correction = V1, std.error = V2, slope = V3)
+  
+  assign(paste(glue("{df_name}"), "results", glue("{param}"), sep = "_"), results_boot, envir = parent.frame())
+  assign(paste(glue("{df_name}"), "corr", glue("{param}"), sep = "_"), sample_coefs$estimate, envir = parent.frame())
+  
+  print(results_boot)
+}

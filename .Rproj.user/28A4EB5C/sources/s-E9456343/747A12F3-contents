@@ -1,0 +1,151 @@
+---
+title: "Apatite Data_Loading and Setup"
+author: "Spencer  Zeigler"
+date: "6/16/2021"
+output:
+  html_document: 
+    df_print: paged
+    css: stylesheet.css
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+editor_options:
+  chunk_output_type: console
+---
+
+#Setup
+```{r setup, include=FALSE}
+#for stats
+options(java.parameters = "-Xmx8000m") #to prevent Java heap space error. set to full RAM of this computer (8gB) 
+#https://stackoverflow.com/questions/21937640/handling-java-lang-outofmemoryerror-when-writing-to-excel-from-r
+library(rJava) 
+library(MASS) 
+library(performance) #check model
+library(tidymodels)
+library(tictoc) #check how long model takes to run
+
+
+#tidyverse
+library(tidyverse) #purr, dplyr, tidyr, readr, readxl, tibble, stringr, forcats, ggplot2
+library(broom)
+library(scales) 
+library(readxl) 
+library(glue)
+library(tibble)
+
+#for viz
+library(plotly)
+library(patchwork)
+library(RColorBrewer)
+library(colorspace)
+library(jcolors)
+library(viridis)
+library(ggsci)
+library(ggthemes)
+library(DescTools)
+library(dichromat)
+
+#for knitting
+library(knitr)
+library(tinytex)
+library(latex2exp) 
+
+#library(xlsx) 
+#library(datapaste)
+
+par(mfrow=c(1, 1)) #how to arrange plots, 1 per row, 1 per column
+
+#Theme options
+theme_set(theme_light())
+theme_update(plot.title = element_text(hjust = 0.5)) #adjusts theme so that all titles are centered
+theme_update(plot.subtitle= element_text(hjust = 0.5)) #adjusts subtitle so they are all centered
+options(scipen = 10000000) #prints numbers instead of scientific notation
+```
+
+# Color palettes 
+```{r}
+#qual_color_random <- c("#322288", "#aa4499", "#44aa99", "#671000", "#989934", "#6599cc", "#aa4466", "#ddcc77", "#000000")
+#cb <- c("#595959", "#5f9ed1", "#c85200")
+#cb2 <- c("#f06400", "#949494", "#008CF0")
+#tf_color <- c("#ed6a5e", "#9ebc9e", "#553e4e")
+```
+
+# Import Data
+Import master datasheet
+```{r}
+apatite <- read_excel("./data/Data Comps_Final.xlsx", sheet="Data Comps") 
+apatite <- apatite[-c(42, 166, 217, 218, 244),] #delete termination end grains
+as_tibble(apatite)
+
+apatite <- apatite %>%
+  select(1:5, 7:8, 13, 16:30, 32, 43:48)
+```
+
+Import main results datasheet
+```{r}
+apatite_main <- read_csv("./outputs/main_results_22102021.csv")
+```
+
+
+Setting cols as factor for plotting
+```{r}
+apatite$gem <- factor(apatite$gem, levels = c("A1", "A2", "B1", "B2", "C1", "C2"))
+apatite$gc <- factor(apatite$gc, levels = c("A", "B", "C"))
+apatite$ri <- factor(apatite$ri, levels = c("1", "2"))
+apatite$size.cat <- factor(apatite$size.cat, levels = c("rare- small", "common",  "rare- large"))
+
+#apatite$size.name <- factor(apatite$size.name, levels=c("Small & Rare","Small & Common","Typical & Common", "Large & Common", "Large & Rare"))
+#apatite$size.bin <- factor(apatite$size.bin, levels = c("40-50", "51-60", "61-70", "71-80", "81-90", "91-100", "101-110", "111-120", "121-130", "131-140", "141-150", "151-160", "161-170"))
+#groupings <- as.vector(c("A", "A1", "A2", "B", "B1", "B2", "C", "C1", "C2", "hexagonal", "ellipsoid", "1", "2", "term0", "term1", "term2", "rare- small", "common", "rare- large"), mode = "character")
+```
+
+Making parameter based dataframes
+```{r}
+#Dataframe by Roughness Index 
+ri1 <- apatite %>% filter(ri=="1")
+ri2 <- apatite %>% filter(ri=="2")
+
+#Dataframe by Geometric Classification
+a <- apatite %>% filter(gc=="A") 
+b <- apatite %>% filter(gc=="B") 
+c <- apatite %>% filter(gc=="C") 
+
+#Create Dataframes split by both geometry and roughness 
+a1 <- apatite %>% filter(gem == "A1") 
+a2 <- apatite %>% filter(gem == "A2")
+b1 <- apatite %>% filter(gem == "B1") 
+b2 <- apatite %>% filter(gem == "B2")
+c1 <- apatite %>% filter(gem == "C1") 
+c2 <- apatite %>% filter(gem == "C2")
+
+#Make dataframes based on geometry 
+hex <- apatite %>% filter(gc == "A" | gc == "B")
+ellip <- apatite %>% filter(gc == "C")
+
+#Make dataframe based on size
+rare_small <- apatite %>% filter(size.cat == "rare- small")
+common <- apatite %>% filter(size.cat == "common")
+rare_large <- apatite %>% filter(size.cat == "rare- large")
+```
+
+#Load functions
+
+Statistics functions
+```{r}
+source("./functions/function_bootstrapped_slopes.R")
+source("./functions/function_residual_sd_22102021.R")
+```
+
+Plotting functions
+```{r}
+
+source("./functions/function_plot_results.R")
+```
+
+
+
+
+
+
