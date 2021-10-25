@@ -1,0 +1,94 @@
+---
+title: "TITLE"
+subtitle: "SUBTITLE"
+author: "AUTHOR"
+date: "Last knitted `r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document: 
+    df_print: paged
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+editor_options:
+  chunk_output_type: console # switch to 'inline' if preferred
+---
+
+# Setup
+
+```{r "setup", message = FALSE}
+# packages
+library(tidyverse) # general data wrangling and plotting
+
+# scripts
+source("scripts/functions.R")
+
+# global knitting options for code rendering
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  dev = c("png", "pdf"),
+  dev.args = list(pdf = list(encoding = "WinAnsi", useDingbats = FALSE)),
+  fig.keep = "all",
+  fig.path = file.path("plots", paste0(gsub("\\.[Rr]md", "", knitr::current_input()), "_"))
+)
+```
+
+# Data Loading
+```{r}
+raw_tumor_data <- read_excel("data/tumor_fig1_dataviz.xlsx", skip = 3, n_max = 14)
+
+```
+
+# Processing
+```{r}
+tumor_data <- raw_tumor_data %>%
+  pivot_longer(cols = -Days, names_to = "treatment", values_to = "growth") %>%
+  mutate(group = cumsum(str_detect(treatment, "^\\.", negate = TRUE))) %>%
+  group_by(group) %>%
+  mutate(treatment = treatment[1]) %>%
+  group_by(treatment, Days) %>%
+  mutate(replicate = 1:n())
+```
+
+# Plot
+```{r}
+zero_tumor_data <- tumor_data %>% select(treatment, replicate) %>% unique() %>% mutate(Days = 0, growth = 0)
+
+treatments <- 
+  tribble(
+    ~treatment,        ~label,                    ~color,
+    "Water/PBS",       "Water + PBS",             "black",
+    "Water/aPDL1",     "Water + anti-PD-L1",      "dark red",
+    "LArg/PBS",        "L-arginine + PBS",        "dark blue",
+    "LArg/anti-PD-L1", "L-arginine + anti-PD-L1", "dark green"
+  ) %>%
+  mutate(label = as_factor(label))
+
+bind_rows(zero_tumor_data, tumor_data) %>%
+  left_join(treatments, by = "treatment") %>%
+  ggplot(aes(Days, growth, color = label)) + 
+  geom_line(aes(group = replicate)) +
+  scale_color_manual(values = treatments$color) +
+  facet_wrap(~label, nrow = 1, scales = "free_y", labeller = function(df) {
+    mutate(df, label = str_replace((label, fixed("+"), "+ \n")))
+  }) +
+  theme_bw() +
+  theme(
+    text = element_text(size = 16),
+    strip.text = element_text(size = 20),
+    panel.grid = element_blank(), 
+    strip.background = element_blank(), 
+    plot.background = element_blank(),
+    panel.border = element_blank(), 
+    axis.line.x.bottom =  element_line(), 
+    axis.line.y.left = element_line()
+  )
+  coord_cartesian(xlim = c(5, 42), ylim = c(0,2500), expand = FALSE)
+```
+
+
+
+
+
+

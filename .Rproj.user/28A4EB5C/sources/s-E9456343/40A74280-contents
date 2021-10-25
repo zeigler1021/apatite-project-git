@@ -16,6 +16,7 @@ ggthemes::palette_pander(7)
 jcolors::scale
 ggthemes_data$tableau #colorblind #prints hex codes from ggthemes
 dichromat::colorschemes
+blues <- c("#A5DDDF", "#52C4CC", "#006666")
 
 qual_color_random <- c("#322288", "#aa4499", "#44aa99", "#671000", "#989934", "#6599cc", "#aa4466", "#ddcc77", "#000000")
 cb <- c("#c85200", "#5f9ed1","#595959")
@@ -24,16 +25,8 @@ cb3 <- c("#4ACBFA", "#FAA35E", "#6E61DB")
 cb4 <- c("#51796A", "#F5B347")
 cb5 <- c("#497A7A", "#F7D552")
 
-colorspace::swatchplot(tableau_color_pal("Color Blind"))
+colorspace::swatchplot(blues)
 colorspace::swatchplot(tf_color)
-```
-
-
-
-```{r}
-library(ggExtra)
-ggplot(apatite, aes(x = db.ft, color = gem)) + 
-  geom_density(position = "identity")
 ```
 
 Exploring Ft
@@ -60,50 +53,9 @@ ggplot(aes(x = s.ft, y = db.ft, color= gc)) +
   geom_abline(slope=1.25, intercept=0, size=.1, linetype= 2)  #20%
 p
 
-ggplot(apatite, aes(x =  s.ft, y = db.ft)) +
-    scale_y_continuous(trans = 'log10')  +
-  scale_x_continuous(trans = 'log10')  +
-  geom_smooth(method= "lm", formula = y~0+x, se=F) +
-  geom_point() 
-
-ggplot(apatite, aes(x = s.v, y = db.v)) +
-  scale_y_continuous(trans = 'log10')  +
-  scale_x_continuous(trans = 'log10')  +
-  geom_smooth(method= "lm", formula = y~0+x, se=F) +
-  geom_point() 
-
-
- ggMarginal(p, type = "density") 
- 
- #ggplot(apatite, aes(x = s.ft, y = db.ft)) +
-
- library(ggridges)
- 
-ftresid <- lm(s.ft ~ 0 + db.ft, hex)$residuals 
-  
-bind_cols(hex$size.cat, (ftresid / hex$s.ft) * 100) %>%
-  ggplot(aes(x = ...1, y = ...2)) +
-  geom_jitter(alpha = 0.5, width = 0.1, color = "lightblue") + 
-  geom_point(stat = "summary", fun.y = "mean") +
-  geom_errorbar(stat = "summary", fun.data = "mean_se", fun.args = list(mult = 1.96), width = 0) + 
-  geom_hline(yintercept = 0, size = .5, linetype = 2) +
-  labs(x = "Size Category", y = "Residuals", title = "The standard error of Ft residuals show a strong\nrelationship with size.")
-  #geom_density_ridges()
-
-
-
-
-
-volresid <- lm(s.v ~ 0 + db.v, apatite)$residuals
-bind_cols(apatite$size.cat, volresid) %>%
-  ggplot(aes(x = ...2, y = ...1)) +
-  geom_density_ridges(bins= 20)
-
-ftrsid 
-
 ```
 
-Exploring ESR Ft
+Exploring Rs
 ```{r}
 apatite %>%
   ggplot(mapping=aes(x = s.esr.ft, y = db.esr.ft, color = gc)) +
@@ -127,7 +79,6 @@ Exploring Volume
 ```{r}
 pdf(width = 7.8, height = 3.85)
 apatite %>%
-  
 ggplot(aes(x = s.v, y = db.v, color=gc)) + # 
   geom_smooth(method= "lm", formula = y~0+x, se = F) +
   geom_point(size = 3, shape = 18) +
@@ -194,7 +145,6 @@ ggplot(uncert_result_hex_volume, aes(j.w1, percent_diff)) +
   labs(x = "Maximum Width (µm)", y = "Residuals as a % Difference") #, title = "Volume Residuals vs. Maximum Width", subtitle = latex2exp::TeX("The sd of volume residuals are controlled by $\\textbf{roughness}.")
 ```
 
-
 #Ft- 2 Np vs. Observed Np
 ```{r}
 ## MM3a5,7 is the ~19% diff outlier
@@ -251,7 +201,6 @@ hex %>%
 
 #Volume- 2 Np vs. Observed Np
 ```{r}
-
 hex %>%
   select(sample, s.v, s.v.ognp, db.v, size.cat, np.ognp, j.w1) %>%
   mutate(percentdiff = ((s.v - s.v.ognp)/s.v.ognp) * 100) %>%
@@ -272,24 +221,63 @@ hex %>%
 ```
 
 
+```{r}
+uncerts_hex_vol_allnp$ri <- as.factor(uncerts_hex_vol_allnp$ri)
+bpv <- ggplot(uncerts_hex_vol_allnp, aes(x = ri, y = percent_diff)) + 
+  geom_jitter(alpha = 0.7, color = "lightblue") +
+  geom_abline(slope = 0, intercept = 0, color = "grey") +
+  geom_boxplot(fill = "transparent") +
+  labs(x = "Roughness Index", 
+       y = "Percent Difference of Residuals", 
+       title = "Volume Residuals by Grain Roughness") +
+  scale_x_discrete(labels = c("1" = "Smooth (1)", "2" = "Rough (2)"))
+
+uncerts_hex_ft_2np$size.cat <- as.factor(uncerts_hex_ft_2np$size.cat)
+bpft <- ggplot(uncerts_hex_ft_2np, aes(x = size.cat, y = percent_diff)) + 
+  geom_jitter(alpha = 0.7, color = "lightgreen") +
+  geom_abline(slope = 0, intercept = 0, color = "grey") +
+  geom_boxplot(fill = "transparent") +
+  labs(x = "Grain Size", 
+       y = "Percent Difference of Residuals", 
+       title = "Ft Residuals by Grain Size") +
+  scale_x_discrete(labels = c("rare- small" = "Small (<50µm)", "common" = "Average (50-100µm)", "rare- large" = "Large (>100µm)"))
+
+uncerts_hex_rs_2np$size.cat <- as.factor(uncerts_hex_rs_2np$size.cat) 
+bprs <- ggplot(uncerts_hex_rs_2np, aes(x = size.cat, y = percent_diff)) + 
+  geom_jitter(alpha = 0.7, color = "lightpink") +
+  geom_abline(slope = 0, intercept = 0, color = "grey") +
+  geom_boxplot(fill = "transparent") +
+    labs(x = "Grain Size", 
+       y = "Percent Difference of Residuals", 
+       title = "Rs Residuals by Grain Size") +
+  scale_x_discrete(labels = c("rare- small" = "Small (<50µm)", "common" = "Average (50-100µm)", "rare- large" = "Large (>100µm)"))
+
+bpv + bpft + bprs + plot_annotation(tag_levels = 'A')
+
+```
+
+
+
+
 ############################################################################
 Manuscript Draft Figures
 
 1. Plot Results_Figure
 ```{r}
-pvg <- plot.results(apatite, "s.v", "db.v", "geo", "volume") 
-pvr <- plot.results(apatite, "s.v", "db.v", "rough", "volume")
+pvg <- plot.results(apatite, "s.v.ognp", "db.v", "geo", "volume") 
+pvr <- plot.results(apatite, "s.v.ognp", "db.v", "rough", "volume")
 
-psg <- plot.results(apatite, "s.sa", "db.sa", "geo", "surface")
-psr <- plot.results(apatite, "s.sa", "db.sa", "rough", "surface")
+# psg <- plot.results(apatite, "s.sa", "db.sa", "geo", "surface")
+# psr <- plot.results(apatite, "s.sa", "db.sa", "rough", "surface")
 
 pftg <- plot.results(apatite, "s.ft", "db.ft", "geo", "ft") 
 pftr <- plot.results(apatite, "s.ft", "db.ft", "rough", "ft") 
 
-peg <- plot.results(apatite, "s.esr.ft", "db.esr.ft", "geo", "esr")
-per <- plot.results(apatite, "s.esr.ft", "db.esr.ft", "rough", "esr")
+peg <- plot.results(apatite, "s.rs", "db.rs", "geo", "esr")
+per <- plot.results(apatite, "s.rs", "db.rs", "rough", "esr")
 
-figresults <- (pvg | pvr) / (psg | psr) / (pftg + pftr) / (peg + per) 
+figresults <- (pvg | pvr) / (pftg + pftr) / (peg + per)  + plot_annotation(tag_levels = 'A')
+figresults
 #save 1100 x 1300
 
 ```
@@ -326,10 +314,148 @@ vol.gem <- (pa1 + pb1 + pc1) / (pa2 + pb2 + pc2) / (pa3 + pb3 + pc3)
 vol.gem
 ```
 
+```{r}
+pa1 <- ggplot() + 
+  geom_point(a1, mapping = aes(db.ft, s.ft), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_hex_ft_2np$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "A1", 
+       subtitle = paste("slope = ", glue({round(results_hex_ft_2np$slope, 2)}), sep = " "), 
+       x = "3D Ft", 
+       y = "2D Ft") +
+  theme_clean() 
+
+pa2 <- ggplot() + 
+  geom_point(a2, mapping = aes(db.ft, s.ft), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_hex_ft_2np$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "A2", 
+       subtitle = paste("slope = ", glue({round(results_hex_ft_2np$slope, 2)}), sep = " "), 
+       x = "3D Ft", 
+       y = "2D Ft") +
+  theme_clean() 
+
+pb1 <- ggplot() + 
+  geom_point(b1, mapping = aes(db.ft, s.ft), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_hex_ft_2np$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "B1", 
+       subtitle = paste("slope = ", glue({round(results_hex_ft_2np$slope, 2)}), sep = " "), 
+       x = "3D Ft", 
+       y = "2D Ft") +
+  theme_clean() 
+
+pb2 <- ggplot() + 
+  geom_point(b2, mapping = aes(db.ft, s.ft), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_hex_ft_2np$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "B2", 
+       subtitle = paste("slope = ", glue({round(results_hex_ft_2np$slope, 2)}), sep = " "), 
+       x = "3D Ft", 
+       y = "2D Ft") +
+  theme_clean() 
+
+pc1 <- ggplot() + 
+  geom_point(c1, mapping = aes(db.ft, s.ft), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_hex_ft_2np$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "C1", 
+       subtitle = paste("slope = ", glue({round(results_hex_ft_2np$slope, 2)}), sep = " "), 
+       x = "3D Ft", 
+       y = "2D Ft") +
+  theme_clean() 
+
+pc2 < -ggplot() + 
+  geom_point(c2, mapping = aes(db.ft, s.ft), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_hex_ft_2np$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "C2", 
+       subtitle = paste("slope = ", glue({round(results_hex_ft_2np$slope, 2)}), sep = " "), 
+       x = "3D Ft", 
+       y = "2D Ft") +
+  theme_clean() 
+
+phex <- ggplot() + 
+  geom_point(hex, mapping = aes(db.ft, s.ft), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_hex_ft_2np$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "Hexagonal Grains (GEM A and B)", 
+       subtitle = paste("slope = ", glue({round(results_hex_ft_2np$slope, 2)}), sep = " "), 
+       x = "3D Ft", 
+       y = "2D Ft") +
+  theme_clean() 
+
+pellip <- ggplot() + 
+  geom_point(ellip, mapping = aes(db.ft, s.ft), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_ellip_ft_2np$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "Ellipsoid Grains (GEM C)", 
+       subtitle = paste("slope = ", glue({round(results_ellip_ft_2np$slope, 2)}), sep = " "), 
+       x = "3D Ft", 
+       y = "2D Ft") +
+  
+  theme_clean() 
+  
+phex / pellip + plot_annotation(tag_levels = 'A')
+```
+
+```{r}
+phexv <- ggplot() + 
+  geom_point(hex, mapping = aes(db.v, s.v.ognp), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_hex_vol_allnp$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "Hexagonal Grains (GEM A and B)", 
+       subtitle = paste("slope = ", glue({round(results_hex_vol_allnp$slope, 2)}), sep = " "), 
+       x = "3D Volume (µm^3)", 
+       y = "2D Volume (µm^3)") +
+  xlim(0, 800000) + ylim(0,950000) +
+  theme_clean() 
+
+pellipv <- ggplot() + 
+  geom_point(ellip, mapping = aes(db.v, s.v.ognp), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_ellip_vol_allnp$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "Ellipsoid Grains (GEM C)", 
+       subtitle = paste("slope = ", glue({round(results_ellip_vol_allnp$slope, 2)}), sep = " "), 
+       x = "3D Volume (µm^3)", 
+       y = "2D Volume (µm^3)") +
+  xlim(0, 800000) + ylim(0,950000) +
+  theme_clean() 
+  
+phexv / pellipv + plot_annotation(tag_levels = 'A')
+```
+
+
+```{r}
+phexrs <- ggplot() + 
+  geom_point(hex, mapping = aes(db.rs, s.rs), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_hex_rs_2np$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "Hexagonal Grains (GEM A and B)", 
+       subtitle = paste("slope = ", glue({round(results_hex_rs_2np$slope, 2)}), sep = " "), 
+       x = "3D Volume (µm^3)", 
+       y = "2D Volume (µm^3)") +
+  #xlim(0, 800000) + ylim(0,950000) +
+  theme_clean() 
+
+pelliprs <- ggplot() + 
+  geom_point(ellip, mapping = aes(db.rs, s.rs), size = 2) + 
+  geom_abline(mapping = aes(slope = 1, intercept = 0 ), size = 0.7, linetype = 1) +
+  geom_abline(mapping = aes(slope = {results_ellip_rs_2np$slope}, intercept = 0), linetype = 1, size = 1, color = "#9a59e6") + 
+  labs(title = "Ellipsoid Grains (GEM C)", 
+       subtitle = paste("slope = ", glue({round(results_ellip_rs_2np$slope, 2)}), sep = " "), 
+       x = "3D Volume (µm^3)", 
+       y = "2D Volume (µm^3)") +
+  #xlim(0, 800000) + ylim(0,950000) +
+  theme_clean() 
+  
+phexrs / pelliprs + plot_annotation(tag_levels = 'A')
+```
+
 4. Analyzed vs. Observed Distribution 
 #Read in number_apatite data for plotting and set columns as factor
 ```{r}
-number_apatite <- read_excel("./Analyzed vs Observed Binned Apatite Data_rmf_v2_jrm_final.xlsx", sheet = "R Cont")
+number_apatite <- read_excel("./data/Analyzed vs Observed Binned Apatite Data_rmf_v2_jrm_final.xlsx", sheet = "R Cont")
 number_apatite <- number_apatite[order(number_apatite$analyzed_width),]
 number_apatite<- number_apatite[-c(1079:1102),] #only include grains <200
 number_apatite<- number_apatite[-c(1:11),] #only include grains >40

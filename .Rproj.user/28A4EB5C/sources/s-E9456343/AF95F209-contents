@@ -3,7 +3,51 @@ title: "4_Apatite Data_Graveyard "
 output: html_notebook
 ---
 
+### Function which bootstraps ONLY analysis set:: 
+Bootstrapping individual GEM values: 
+```{r}
+bootstrap.analysis <- function (df, threeD, twoD, df_name) {
+  
+  #Create sample df with only columns "twoD" and "threeD"
+  sample_df <- df %>% select(threeD, twoD)
+  colnames(sample_df) <- c(all_of("threeD"), "twoD")
+ 
+  #Perform bootstrap 
+  sample_boot <- bootstraps(sample_df,
+                            times = 10000,
+                            apparent = TRUE)
+  #Extract only the analysis datasets (ie. the 'bootstrapped' set). Ignore the assessment set.
+  resamples <- map(.x = sample_boot$splits, .f = analysis) 
+  
+  #Run linear regressions on the analysis sets, produces 10,000 models
+  sample_models <- resamples %>%
+              map(~ lm(twoD ~ 0 + threeD, data = .x)) 
 
+  #Extract the slopes only
+  sample_models_flat <- flatten(sample_models)
+  sample_slopes <- sample_models_flat[seq(1, length(sample_models_flat), 12)]
+  sample_slopes <- unlist(sample_slopes) 
+  sample_slopes <- tibble(sample_slopes) %>% rename(slopes = sample_slopes)
+  
+  #Extract the residuals 
+  #sample_residuals <- sample_models_flat[seq(2, length(sample_models_flat), 12)]  #extract residuals
+ 
+  #sample_residuals <- data.frame(matrix(unlist(sample_residuals), nrow = 225, byrow = FALSE))  #get into a dataframe, each col is a bootstrap
+  
+   # #Get confidence interval 
+   # percentile_intervals <<- int_pctl(sample_models,
+   #                                  coef_inf)
+  
+  #Results
+  results_boot <- as.data.frame(cbind(mean(sample_slopes$slopes), (1/mean(sample_slopes$slopes)))) %>%
+              rename(slope = V1, plot_slope= V2)
+  
+  #Save results df's to global environment
+  assign(paste("results", glue("{df_name}"), sep = "_"), results_boot, envir = parent.frame())
+  assign(paste("slopes", glue("{df_name}"), sep = "_"), sample_slopes, envir = parent.frame())
+  #assign(paste("residuals", glue("{df_name}"), sep = "_"), sample_residuals, envir = parent.frame())
+}
+```
 
 ###Plotting Code
 

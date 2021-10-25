@@ -1,0 +1,88 @@
+---
+title: "Boulder Weather Time Series"
+subtitle: "Data from NOAA: https://observablehq.com/@observablehq/noaa-weather-data-by-major-u-s-city"
+author: "Spencer Zeigler"
+date: "Last knitted `r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document: 
+    df_print: paged
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+editor_options:
+  chunk_output_type: console # switch to 'inline' if preferred
+---
+```{r}
+there::there()
+```
+
+# Setup
+
+```{r "setup", message = FALSE}
+# packages
+library(tidyverse) # general data wrangling and plotting
+library(see)
+
+# global knitting options for code rendering
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  dev = c("png", "pdf"),
+  dev.args = list(pdf = list(encoding = "WinAnsi", useDingbats = FALSE)),
+  fig.keep = "all",
+  fig.path = file.path("plots", paste0(gsub("\\.[Rr]md", "", knitr::current_input()), "_"))
+)
+```
+
+# Data Loading
+```{r}
+weather_raw <- read_csv("data/Boulder_2020.csv")
+
+weather <- weather_raw %>%
+  mutate(date = lubridate::ymd_hms(weather_raw$date), 
+         air_temp = air_temp * (9/5) + 32, 
+         month = lubridate::month(weather_raw$date))
+```
+
+# Monthly weather
+```{r}
+weather %>%
+  group_by(month) %>%
+  ggplot(aes(x = air_temp, y = as_factor(month), fill = stat(x))) +
+  geom_density_ridges_gradient() +
+  scale_fill_viridis_c(option = "C", direction = -1, begin = 1, end = 0) +
+  theme_minimal() +
+  theme(axis.line.x.bottom = element_line(), 
+        axis.line.y.left = element_line(), 
+        panel.grid = element_blank(), 
+        axis.ticks.x = element_line(), 
+        legend.position = "none",
+        axis.text = element_text(family = "Avenir"),
+        axis.title.y.left = element_text(margin = margin(l = 5)),
+        axis.title.x.bottom = element_text(margin = margin(t = 5)),
+        axis.title = element_text(family = "Avenir"),
+        plot.title = element_text(family = "Avenir", margin = margin(b = 10, t = 5)), 
+        plot.caption = element_text(family = "Avenir", margin = margin(t=10, b = 5))
+        ) +
+  labs(title = "Monthly Temperatures for 2020 in Boulder, CO",
+       x = "Temperature [°F]", 
+       y = "Month", 
+       caption = "Source: NOAA Weather DataBy Major City\nObservableHQ | 19-10-2021") +
+  scale_y_discrete(labels = month.name)
+```
+
+
+#Plotting
+```{r}
+ggplot(weather, aes(x = date, y = air_temp)) +
+  geom_line()
+
+```
+
+
+
+
+
+
+

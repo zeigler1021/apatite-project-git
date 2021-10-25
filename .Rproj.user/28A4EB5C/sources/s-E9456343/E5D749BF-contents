@@ -9,140 +9,103 @@ editor_options:
 
 #Below is testing/working code: 
 
-Bootstrapping individual GEM values: 
-```{r}
-bootstrap.analysis <- function (df, threeD, twoD, df_name) {
-  
-  #Create sample df with only columns "twoD" and "threeD"
-  sample_df <- df %>% select(threeD, twoD)
-  colnames(sample_df) <- c(all_of("threeD"), "twoD")
- 
-  #Perform bootstrap 
-  sample_boot <- bootstraps(sample_df,
-                            times = 10000,
-                            apparent = TRUE)
-  #Extract only the analysis datasets (ie. the 'bootstrapped' set). Ignore the assessment set.
-  resamples <- map(.x = sample_boot$splits, .f = analysis) 
-  
-  #Run linear regressions on the analysis sets, produces 10,000 models
-  sample_models <<- resamples %>%
-              map(~ lm(twoD ~ 0 + threeD, data = .x)) 
-
-  #Extract the slopes only
-  sample_models_flat <- flatten(sample_models)
-  sample_slopes <- sample_models_flat[seq(1, length(sample_models_flat), 12)]
-  sample_slopes <- unlist(sample_slopes) 
-  sample_slopes <- tibble(sample_slopes) %>% rename(slopes = sample_slopes)
-  
-  #Extract the residuals 
-  #sample_residuals <- sample_models_flat[seq(2, length(sample_models_flat), 12)]  #extract residuals
- 
-  #sample_residuals <- data.frame(matrix(unlist(sample_residuals), nrow = 225, byrow = FALSE))  #get into a dataframe, each col is a bootstrap
-  
-   # #Get confidence interval 
-   # percentile_intervals <<- int_pctl(sample_models,
-   #                                  coef_inf)
-  
-  #Results
-  results_boot <- as.data.frame(cbind(mean(sample_slopes$slopes), (1/mean(sample_slopes$slopes)))) %>%
-              rename(slope = V1, plot_slope= V2)
-  
-  #Save results df's to global environment
-  assign(paste("results", glue("{df_name}"), sep = "_"), results_boot, envir = parent.frame())
-  assign(paste("slopes", glue("{df_name}"), sep = "_"), sample_slopes, envir = parent.frame())
-  #assign(paste("residuals", glue("{df_name}"), sep = "_"), sample_residuals, envir = parent.frame())
-
-  
-  
-  #  #Get coefficients
-  # sample_coefs <- sample_models %>% 
-  #   unnest(coef_inf)
-  # 
-  # #Get confidence interval 
-  # percentile_intervals <- int_pctl(sample_models,
-  #                                  coef_inf)
-}
-```
-
 #Corrections
 ```{r}
 #Ft
-bootstrap.analysis(hex, "db.ft", "s.ft", "hex_ft_2np")
-bootstrap.analysis(ellip, "db.ft", "s.ft", "ellip_ft_2np")
+bootstrap.linreg(hex, "ft", "ft_hex")
+bootstrap.linreg(ellip, "ft", "ft_ellip")
+
+bootstrap.linreg(hex, "s.ft232", "db.ft232", "ft232_hex")
+bootstrap.linreg(ellip, "s.ft232", "db.ft232", "ft232_ellip")
+
+bootstrap.linreg(hex, "s.ft235", "db.ft235", "ft235_hex")
+bootstrap.linreg(ellip, "s.ft235", "db.ft235", "ft235_ellip")
+
+bootstrap.linreg(hex, "s.ft147", "db.ft147", "ft147_hex")
+bootstrap.linreg(ellip, "s.ft147", "db.ft147", "ft147_ellip")
 
 #Volume
-bootstrap.analysis(hex, "db.v", "s.v.ognp", "hex_vol_allnp")
-bootstrap.analysis(ellip, "db.v", "s.v.ognp", "ellip_vol_allnp")
-
-bootstrap.analysis(hex, "db.v", "s.v", "hex_vol_2np")
-bootstrap.analysis(ellip, "db.v", "s.v", "ellip_vol_2np")
+bootstrap.linreg(hex, "volume", "vol_hex")
+bootstrap.linreg(ellip, "volume", "vol_ellip")
 
 #Rs
-bootstrap.analysis(hex, "db.rs", "s.rs", "hex_rs_2np")
-bootstrap.analysis(ellip, "db.rs", "s.rs", "ellip_rs_2np")
+bootstrap.linreg(hex, "rs", "rs_hex")
+bootstrap.linreg(ellip,"rs", "rs_ellip")
 
-
-suppressMessages(bind_cols(results_hex_ft_2np$slope, results_ellip_ft_2np$slope) %>% rename(hex = ...1, ellip = ...2))
-suppressMessages(bind_cols(results_hex_rs_2np$slope, results_ellip_rs_2np$slope) %>% rename(hex = ...1, ellip = ...2))
-suppressMessages(bind_cols(results_hex_vol_2np$slope, results_ellip_vol_2np$slope, results_hex_vol_allnp$slope, results_ellip_vol_allnp$slope) %>% rename(hex_2np = ...1, ellip_2np = ...2, hex_allnp = ...3, ellip_allnp = ...4))
+#Write vectors of corrections to csv. Import later if needed to do comparisons (pvalue tests)
+correction_vectors <- as.data.frame(cbind(ft_hex_corr, ft_ellip_corr, ft232_hex_corr, ft232_ellip_corr, ft235_hex_corr, ft235_ellip_corr, ft147_hex_corr, ft147_ellip_corr, rs_hex_corr, rs_ellip_corr, vol_hex_corr, vol_ellip_corr))
+write_csv(correction_vectors, "./outputs/correction_vectors_10182021")
 ```
 
 #Uncertainties 
 ```{r}
-# slopes_df, df, nest_by, threeD, twoD,  
+#Ft Residuals
+residual.sd(hex, ft_hex_results, "s.ft", "db.ft", "ft_hex")
+residual.sd(ellip, ft_ellip_results, "s.ft", "db.ft", "ft_ellip")
 
-slope <- as.numeric(mean(slopes_ellip_vol_allnp$slopes))
+residual.sd(hex, ft147_hex_results, "s.ft147", "db.ft147", "ft147_hex")
+residual.sd(ellip, ft147_ellip_results, "s.ft147", "db.ft147", "ft147_ellip")
 
-uncerts_ellip_vol_allnp <- cbind(select(ellip, sample, s.v.ognp, db.v, ri, size.cat, j.w1), slope) %>%
-  #group_by(size.cat) %>%
-  mutate(residual = (s.v.ognp - (slope * db.v)), 
-         percent_diff = (((s.v.ognp - (slope * db.v))/s.v.ognp) * 100)) %>%
-  summarize(resid_sd = sd(residual), 
-            resid_se = sqrt(var(residual)/n()), 
-            percentdiff_sd = sd(percent_diff), 
-            percentdiff_se = sqrt(var(percent_diff)/n()), 
-            res_stdev = sqrt(sum(residual)^2/(n()-2)), 
-            res_stdev_percentdiff = sqrt(sum(percent_diff)^2/(n()-2))
-            )
+residual.sd(hex, ft232_hex_results, "s.ft232", "db.ft232", "ft232_hex")
+residual.sd(ellip, ft232_ellip_results, "s.ft232", "db.ft232", "ft232_ellip")
 
-n <- nrow(sample_df)
+residual.sd(hex, ft235_hex_results, "s.ft235", "db.ft235", "ft235_hex")
+residual.sd(ellip, ft235_ellip_results, "s.ft235", "db.ft235", "ft235_ellip")
 
-residual <- (sample_df$s.ft - (sample_df$slope * sample_df$db.ft))
-  stdev <- sd(residual)
-  stder <- stdev/sqrt(n)
+#Rs Residuals
+residual.sd(hex, rs_hex_results, "s.rs", "db.rs", "rs_hex")
+residual.sd(ellip, rs_ellip_results, "s.rs", "db.rs", "rs_ellip")
 
-percent_diff <- (residual / sample_df$s.ft) * 100 
-  stdev <- sd(percent_diff)
-  stder <- stdev/sqrt(n)
-
-stder(slopes_hex_ft_2np)
-  
-stder <- function(x) sqrt(var(x)/length(x))
-stder_results <- unlist(map(residuals_hex_ft_2np, stder)) 
-stder_results <- tibble(stder_results)
-
-#make a histogram of the percent differences
-sample_models_flat <- flatten(sample_models)
-boot_sample <- sample_models_flat[seq(12, length(sample_models_flat), 12)]
-boot_sample_flat <- flatten(boot_sample)
-boot_sample <- boot_sample_flat[seq(1, length(boot_sample_flat), 2)]
-boot_sample <- data.frame(matrix(unlist(boot_sample), nrow = 225, byrow = FALSE))  #get into a dataframe, each col is a bootstrap
-
-percentdiff_df <- matrix(ncol = 10001, nrow = 225)
-for (i in 1:10001) {
-  percentdiff_df[,i] <- ((residuals_hex_ft_2np[,i] / boot_sample[,i]) * 100)
-}
-percentdiff_df <- as.data.frame(percentdiff_df)
-#stder(percentdiff_df[,1])
-percentdiff_results <- unlist(map(percentdiff_df, sd))
-percentdiff_results <- as.data.frame(percentdiff_results)
-
-hist(stder_results$stder_results)
-hist(percentdiff_results$percentdiff_results)
-
-residuals_hex_ft_2np
+#Volume Residuals
+residual.sd(hex, vol_hex_results, "s.v", "db.v", "vol_hex")
+residual.sd(ellip, vol_ellip_results, "s.v", "db.v", "vol_ellip")
 ```
 
+#Creating main results dataframe 
+```{r}
+#Combine residual df's by geometry first 
+#Ft
+ft_residuals <- full_join(ft_hex_residuals, ft_ellip_residuals) 
+ft147_residuals <- full_join(ft147_hex_residuals, ft147_ellip_residuals) 
+ft232_residuals <- full_join(ft232_hex_residuals, ft232_ellip_residuals) 
+ft235_residuals <- full_join(ft235_hex_residuals, ft235_ellip_residuals) 
+#Rs
+rs_residuals <- full_join(rs_hex_residuals, rs_ellip_residuals) 
+#Volume
+vol_residuals <- full_join(vol_hex_residuals, vol_ellip_residuals) 
+
+#Create "main" results dataframe with columns I care about
+apatite_main <- select(apatite, sample, gem, gc, ri, np.obs, np.2, size.cat, geo, j.w1, db.ft, s.ft, db.v, s.v, db.rs, s.rs, db.ft232, s.ft232, db.ft235, s.ft235, db.ft147, s.ft147)
+
+#Join residuals data (contains correction, percent diff, residual)
+#Ft
+apatite_main <- left_join(apatite_main, ft_residuals, by = "sample") %>%
+  rename(corr.ft = corr, residual.ft = residual, percent_diff.ft = percent_diff)
+apatite_main <- left_join(apatite_main, ft147_residuals, by = "sample") %>%
+  rename(corr.ft147 = corr, residual.ft147 = residual, percent_diff.ft147 = percent_diff)
+apatite_main <- left_join(apatite_main, ft232_residuals, by = "sample") %>%
+  rename(corr.ft232 = corr, residual.ft232 = residual, percent_diff.ft232 = percent_diff)
+apatite_main <- left_join(apatite_main, ft235_residuals, by = "sample") %>%
+  rename(corr.ft235 = corr, residual.ft235 = residual, percent_diff.ft235 = percent_diff)
+#Rs
+apatite_main <- left_join(apatite_main, rs_residuals, by = "sample") %>%
+  rename(corr.rs = corr, residual.rs = residual, percent_diff.rs = percent_diff)
+#Volume
+apatite_main <- left_join(apatite_main, vol_residuals, by = "sample") %>%
+  rename(corr.v = corr, residual.v = residual, percent_diff.v = percent_diff)
+
+#Add in the slopes for plotting!
+apatite_main <- apatite_main %>%
+  mutate(slope.ft = 1/apatite_main$corr.ft, 
+         slope.ft147 = 1/apatite_main$corr.ft147, 
+         slope.ft232 = 1/apatite_main$corr.ft232, 
+         slope.ft235 = 1/apatite_main$corr.ft235, 
+         slope.rs = 1/apatite_main$corr.rs, 
+         slope.v = 1/apatite_main$corr.v)
+
+#save to workbook for easy import 
+write_csv(apatite_main, "./outputs/main_results_22102021.csv")
+```
 
 # Below outputs final results in a 'pretty' and organized way. Not good for testing and working. 
 
