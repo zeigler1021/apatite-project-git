@@ -2,7 +2,15 @@
 title: "Apatite Data_Stats"
 author: "Spencer  Zeigler"
 date: "6/15/2021"
-output: html_document
+  output:
+  html_document: 
+    df_print: paged
+    css: stylesheet.css
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
 editor_options:
   chunk_output_type: console
 ---

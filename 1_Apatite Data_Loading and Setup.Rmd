@@ -66,10 +66,10 @@ options(scipen = 10000000) #prints numbers instead of scientific notation
 
 # Color palettes 
 ```{r}
-qual_color_random <- c("#322288", "#aa4499", "#44aa99", "#671000", "#989934", "#6599cc", "#aa4466", "#ddcc77", "#000000")
-cb <- c("#595959", "#5f9ed1", "#c85200")
-cb2 <- c("#f06400", "#949494", "#008CF0")
-tf_color <- c("#ed6a5e", "#9ebc9e", "#553e4e")
+#qual_color_random <- c("#322288", "#aa4499", "#44aa99", "#671000", "#989934", "#6599cc", "#aa4466", "#ddcc77", "#000000")
+#cb <- c("#595959", "#5f9ed1", "#c85200")
+#cb2 <- c("#f06400", "#949494", "#008CF0")
+#tf_color <- c("#ed6a5e", "#9ebc9e", "#553e4e")
 ```
 
 # Import Data
@@ -140,8 +140,7 @@ source("./functions/function_residual_sd_22102021.R")
 
 Plotting functions
 ```{r}
-
-source("./functions/function_plot_results.R")
+#source("./functions/function_plot_results.R")
 ```
 
 

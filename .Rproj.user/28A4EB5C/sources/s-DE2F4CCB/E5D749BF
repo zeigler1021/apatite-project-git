@@ -3,7 +3,7 @@
     "path": "~/Documents/Flowers Lab/Apatite Nano-CT Project_Feb 2019_June 2020/apatite-project-git/2_Apatite Data_Stats.Rmd",
     "project_path": "2_Apatite Data_Stats.Rmd",
     "type": "r_markdown",
-    "hash": "3715076881",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1623786774269.0,
@@ -11,16 +11,16 @@
     "relative_order": 2,
     "properties": {
         "chunk_output_type": "console",
-        "cursorPosition": "40,6",
-        "scrollLine": "14",
+        "cursorPosition": "114,30",
+        "scrollLine": "90",
         "Source": "Source"
     },
     "folds": "",
-    "lastKnownWriteTime": 1635187278,
+    "lastKnownWriteTime": 1635454909,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1635187278377,
+    "last_content_update": 1635454909231,
     "read_only": false,
     "read_only_alternatives": []
 }

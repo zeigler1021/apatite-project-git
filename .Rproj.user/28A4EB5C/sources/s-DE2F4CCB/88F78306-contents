@@ -1,0 +1,39 @@
+---
+title: "PhD's Awarded Plotting_Week6"
+subtitle: "SUBTITLE"
+author: "AUTHOR"
+date: "Last knitted `r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document: 
+    df_print: paged
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+editor_options:
+  chunk_output_type: console # switch to 'inline' if preferred
+---
+
+# Setup
+
+```{r "setup", message = FALSE}
+# packages
+library(tidyverse) # general data wrangling and plotting
+
+# global knitting options for code rendering
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  dev = c("png", "pdf"),
+  dev.args = list(pdf = list(encoding = "WinAnsi", useDingbats = FALSE)),
+  fig.keep = "all",
+  fig.path = file.path("plots", paste0(gsub("\\.[Rr]md", "", knitr::current_input()), "_"))
+)
+```
+
+# Import Data
+```{r}
+phd_field <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-19/phd_by_field.csv")
+head(phd_field)
+summary(phd_field)
+```
