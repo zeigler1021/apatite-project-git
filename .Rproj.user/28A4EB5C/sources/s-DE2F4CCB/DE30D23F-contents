@@ -1,0 +1,45 @@
+---
+title: "TITLE"
+subtitle: "SUBTITLE"
+author: "AUTHOR"
+date: "Last knitted `r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document: 
+    df_print: paged
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+editor_options:
+  chunk_output_type: console # switch to 'inline' if preferred
+---
+
+# Setup
+
+```{r "setup", message = FALSE}
+# packages
+library(tidyverse) # general data wrangling and plotting
+
+# scripts
+source("scripts/functions.R")
+
+# global knitting options for code rendering
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  dev = c("png", "pdf"),
+  dev.args = list(pdf = list(encoding = "WinAnsi", useDingbats = FALSE)),
+  fig.keep = "all",
+  fig.path = file.path("plots", paste0(gsub("\\.[Rr]md", "", knitr::current_input()), "_"))
+)
+```
+
+# Plot
+
+```{r "plot_name", fig.width=8, fig.height=6}
+ggplot(mpg) + 
+  aes(x = hwy, y = cty, color = class) +
+  geom_point()
+```
+
+
